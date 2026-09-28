@@ -1,0 +1,21 @@
+{
+  "name": "onboardhub-backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "API do OnboardHub",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
