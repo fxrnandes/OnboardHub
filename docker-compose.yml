@@ -1,0 +1,27 @@
+# Ambiente de desenvolvimento local.
+# Sobe um PostgreSQL só para a sua máquina — NÃO é o banco de produção.
+#
+#   docker compose up -d     liga o banco (em segundo plano)
+#   docker compose ps        mostra se está rodando
+#   docker compose down      desliga (os dados continuam salvos)
+
+services:
+  db:
+    image: postgres:16
+    container_name: onboardhub-db
+    environment:
+      POSTGRES_USER: onboardhub
+      POSTGRES_PASSWORD: onboardhub
+      POSTGRES_DB: onboardhub
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U onboardhub"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  db-data:
