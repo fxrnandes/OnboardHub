@@ -9,6 +9,8 @@ import { inviteRoutes } from './modules/invites/invite.routes.js';
 import { InviteService } from './modules/invites/invite.service.js';
 import { jobRoleRoutes } from './modules/job-roles/job-role.routes.js';
 import { memberRoutes } from './modules/members/member.routes.js';
+import { trailRoutes } from './modules/trails/trail.routes.js';
+import { TrailService } from './modules/trails/trail.service.js';
 import { healthRouter } from './routes/health.routes.js';
 
 export interface AppDependencies {
@@ -29,6 +31,7 @@ export function createApp({ pool, jwtSecret, appUrl }: AppDependencies): Express
   app.use('/job-roles', jobRoleRoutes(pool, authenticated));
   app.use('/members', memberRoutes(pool, authenticated));
   app.use('/invites', inviteRoutes(pool, new InviteService(pool, tokens, appUrl), authenticated));
+  app.use(trailRoutes(new TrailService(pool), authenticated));
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'not_found', message: 'Rota não encontrada.' } });
