@@ -9,6 +9,19 @@ jobs:
   backend:
     name: Backend - testes e cobertura
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: onboardhub
+          POSTGRES_PASSWORD: onboardhub
+          POSTGRES_DB: onboardhub
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U onboardhub"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://onboardhub:onboardhub@localhost:5432/onboardhub
     defaults:
       run:
         working-directory: backend

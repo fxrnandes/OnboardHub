@@ -1,10 +1,3 @@
-# Ambiente de desenvolvimento local.
-# Sobe um PostgreSQL só para a sua máquina — NÃO é o banco de produção.
-#
-#   docker compose up -d     liga o banco (em segundo plano)
-#   docker compose ps        mostra se está rodando
-#   docker compose down      desliga (os dados continuam salvos)
-
 services:
   db:
     image: postgres:16
