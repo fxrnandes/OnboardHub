@@ -1,25 +1,34 @@
 import express, { type Express } from 'express';
 import type pg from 'pg';
+import { requireAuth } from './http/auth.middleware.js';
 import { errorHandler } from './http/errors.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { AuthService } from './modules/auth/auth.service.js';
 import { TokenService } from './modules/auth/token.js';
+import { inviteRoutes } from './modules/invites/invite.routes.js';
+import { InviteService } from './modules/invites/invite.service.js';
+import { jobRoleRoutes } from './modules/job-roles/job-role.routes.js';
+import { memberRoutes } from './modules/members/member.routes.js';
 import { healthRouter } from './routes/health.routes.js';
 
 export interface AppDependencies {
   pool: pg.Pool;
   jwtSecret: string;
+  appUrl: string;
 }
 
-export function createApp({ pool, jwtSecret }: AppDependencies): Express {
+export function createApp({ pool, jwtSecret, appUrl }: AppDependencies): Express {
   const app = express();
   const tokens = new TokenService(jwtSecret);
-  const auth = new AuthService(pool, tokens);
+  const authenticated = requireAuth(tokens, pool);
 
   app.use(express.json());
 
   app.use('/health', healthRouter);
-  app.use('/auth', authRoutes(auth, tokens));
+  app.use('/auth', authRoutes(new AuthService(pool, tokens), authenticated));
+  app.use('/job-roles', jobRoleRoutes(pool, authenticated));
+  app.use('/members', memberRoutes(pool, authenticated));
+  app.use('/invites', inviteRoutes(pool, new InviteService(pool, tokens, appUrl), authenticated));
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'not_found', message: 'Rota não encontrada.' } });

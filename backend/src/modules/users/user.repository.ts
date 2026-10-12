@@ -8,6 +8,7 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  jobRoleId: string | null;
   createdAt: Date;
 }
 
@@ -21,6 +22,12 @@ export interface NewUser {
   email: string;
   passwordHash: string;
   role: Role;
+  jobRoleId?: string | null;
+}
+
+export interface MemberChanges {
+  role?: Role;
+  jobRoleId?: string | null;
 }
 
 interface UserRow {
@@ -30,10 +37,11 @@ interface UserRow {
   email: string;
   password_hash: string;
   role: Role;
+  job_role_id: string | null;
   created_at: Date;
 }
 
-const columns = 'id, company_id, name, email, password_hash, role, created_at';
+const columns = 'id, company_id, name, email, password_hash, role, job_role_id, created_at';
 
 const toUser = (row: UserRow): UserWithPassword => ({
   id: row.id,
@@ -41,6 +49,7 @@ const toUser = (row: UserRow): UserWithPassword => ({
   name: row.name,
   email: row.email,
   role: row.role,
+  jobRoleId: row.job_role_id,
   createdAt: row.created_at,
   passwordHash: row.password_hash,
 });
@@ -52,10 +61,17 @@ export class UserRepository {
 
   async create(data: NewUser): Promise<User> {
     const { rows } = await this.db.query<UserRow>(
-      `insert into users (company_id, name, email, password_hash, role)
-       values ($1, $2, $3, $4, $5)
+      `insert into users (company_id, name, email, password_hash, role, job_role_id)
+       values ($1, $2, $3, $4, $5, $6)
        returning ${columns}`,
-      [data.companyId, data.name.trim(), data.email.trim().toLowerCase(), data.passwordHash, data.role],
+      [
+        data.companyId,
+        data.name.trim(),
+        data.email.trim().toLowerCase(),
+        data.passwordHash,
+        data.role,
+        data.jobRoleId ?? null,
+      ],
     );
     return withoutPassword(toUser(rows[0]!));
   }
@@ -71,5 +87,45 @@ export class UserRepository {
   async findById(id: string): Promise<User | null> {
     const { rows } = await this.db.query<UserRow>(`select ${columns} from users where id = $1`, [id]);
     return rows[0] ? withoutPassword(toUser(rows[0])) : null;
+  }
+
+  async findInCompany(companyId: string, id: string): Promise<User | null> {
+    const { rows } = await this.db.query<UserRow>(
+      `select ${columns} from users where company_id = $1 and id = $2`,
+      [companyId, id],
+    );
+    return rows[0] ? withoutPassword(toUser(rows[0])) : null;
+  }
+
+  async listByCompany(companyId: string): Promise<User[]> {
+    const { rows } = await this.db.query<UserRow>(
+      `select ${columns} from users where company_id = $1 order by lower(name)`,
+      [companyId],
+    );
+    return rows.map((row) => withoutPassword(toUser(row)));
+  }
+
+  async countMasters(companyId: string): Promise<number> {
+    const { rows } = await this.db.query<{ total: number }>(
+      "select count(*)::int as total from users where company_id = $1 and role = 'master'",
+      [companyId],
+    );
+    return rows[0]!.total;
+  }
+
+  async update(companyId: string, id: string, changes: MemberChanges): Promise<User> {
+    const { rows } = await this.db.query<UserRow>(
+      `update users set
+         role = coalesce($3, role),
+         job_role_id = case when $4::boolean then $5::uuid else job_role_id end
+       where company_id = $1 and id = $2
+       returning ${columns}`,
+      [companyId, id, changes.role ?? null, changes.jobRoleId !== undefined, changes.jobRoleId ?? null],
+    );
+    return withoutPassword(toUser(rows[0]!));
+  }
+
+  async delete(companyId: string, id: string): Promise<void> {
+    await this.db.query('delete from users where company_id = $1 and id = $2', [companyId, id]);
   }
 }

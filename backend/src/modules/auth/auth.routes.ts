@@ -1,9 +1,7 @@
-import { Router } from 'express';
+import { Router, type RequestHandler } from 'express';
 import { z } from 'zod';
-import { requireAuth } from '../../http/auth.middleware.js';
 import type { User } from '../users/user.repository.js';
 import type { AuthService } from './auth.service.js';
-import type { TokenService } from './token.js';
 
 const email = z.string().trim().toLowerCase().pipe(z.email('E-mail inválido.'));
 
@@ -19,9 +17,9 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Informe a senha.'),
 });
 
-const publicUser = ({ id, name, email, role }: User) => ({ id, name, email, role });
+const publicUser = ({ id, name, email, role, jobRoleId }: User) => ({ id, name, email, role, jobRoleId });
 
-export function authRoutes(auth: AuthService, tokens: TokenService): Router {
+export function authRoutes(auth: AuthService, requireAuth: RequestHandler): Router {
   const router = Router();
 
   router.post('/signup', async (req, res) => {
@@ -34,8 +32,8 @@ export function authRoutes(auth: AuthService, tokens: TokenService): Router {
     res.json({ token, user: publicUser(user) });
   });
 
-  router.get('/me', requireAuth(tokens), async (req, res) => {
-    const { user, company } = await auth.me(req.auth!.sub);
+  router.get('/me', requireAuth, async (req, res) => {
+    const { user, company } = await auth.me(req.auth!.userId);
     res.json({ user: publicUser(user), company: { id: company.id, name: company.name } });
   });
 

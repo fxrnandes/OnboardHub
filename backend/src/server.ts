@@ -7,6 +7,7 @@ const port = Number(process.env.PORT ?? 3333);
 const app = createApp({
   pool: createPool(requireEnv('DATABASE_URL')),
   jwtSecret: requireEnv('JWT_SECRET'),
+  appUrl: process.env.APP_URL ?? 'http://localhost:5173',
 });
 
 app.listen(port, () => {
