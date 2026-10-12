@@ -1,4 +1,4 @@
-import type pg from 'pg';
+import type { Queryable } from '../../db/pool.js';
 
 export interface Company {
   id: string;
@@ -19,7 +19,7 @@ const toCompany = (row: CompanyRow): Company => ({
 });
 
 export class CompanyRepository {
-  constructor(private readonly db: pg.Pool) {}
+  constructor(private readonly db: Queryable) {}
 
   async create(name: string): Promise<Company> {
     const { rows } = await this.db.query<CompanyRow>(
