@@ -7,6 +7,8 @@ import { AuthService } from './modules/auth/auth.service.js';
 import { TokenService } from './modules/auth/token.js';
 import { inviteRoutes } from './modules/invites/invite.routes.js';
 import { InviteService } from './modules/invites/invite.service.js';
+import { learningRoutes } from './modules/learning/learning.routes.js';
+import { LearningService } from './modules/learning/learning.service.js';
 import { jobRoleRoutes } from './modules/job-roles/job-role.routes.js';
 import { memberRoutes } from './modules/members/member.routes.js';
 import { trailRoutes } from './modules/trails/trail.routes.js';
@@ -31,6 +33,7 @@ export function createApp({ pool, jwtSecret, appUrl }: AppDependencies): Express
   app.use('/job-roles', jobRoleRoutes(pool, authenticated));
   app.use('/members', memberRoutes(pool, authenticated));
   app.use('/invites', inviteRoutes(pool, new InviteService(pool, tokens, appUrl), authenticated));
+  app.use('/my', learningRoutes(new LearningService(pool), authenticated));
   app.use(trailRoutes(new TrailService(pool), authenticated));
 
   app.use((_req, res) => {

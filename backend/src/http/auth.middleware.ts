@@ -8,6 +8,7 @@ export interface AuthContext {
   userId: string;
   companyId: string;
   role: Role;
+  jobRoleId: string | null;
 }
 
 declare global {
@@ -38,7 +39,7 @@ export const requireAuth =
     const user = await new UserRepository(db).findById(userId);
     if (!user) throw invalidSession();
 
-    req.auth = { userId: user.id, companyId: user.companyId, role: user.role };
+    req.auth = { userId: user.id, companyId: user.companyId, role: user.role, jobRoleId: user.jobRoleId };
     next();
   };
 
