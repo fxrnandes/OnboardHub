@@ -45,3 +45,82 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  deploy:
+    name: Deploy na Azure
+    needs: backend
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/onboardhub-api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: backend
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.sha }}
+
+      - name: Enviar arquivos de deploy para o servidor
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          source: deploy/docker-compose.prod.yml,deploy/Caddyfile
+          target: /opt/onboardhub
+          strip_components: 1
+
+      - name: Atualizar a aplicação no servidor
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          API_IMAGE: ${{ env.IMAGE }}:${{ github.sha }}
+          API_DOMAIN: ${{ vars.API_DOMAIN }}
+          APP_URL: ${{ vars.APP_URL }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          envs: GHCR_USER,GHCR_TOKEN,API_IMAGE,API_DOMAIN,APP_URL,POSTGRES_PASSWORD,JWT_SECRET
+          script: |
+            set -e
+            cd /opt/onboardhub
+            umask 077
+            cat > .env <<ENV
+            API_IMAGE=$API_IMAGE
+            API_DOMAIN=$API_DOMAIN
+            APP_URL=$APP_URL
+            POSTGRES_PASSWORD=$POSTGRES_PASSWORD
+            JWT_SECRET=$JWT_SECRET
+            ENV
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker logout ghcr.io
+            docker image prune -f
+
+      - name: Conferir se a API está no ar
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS "https://${{ vars.API_DOMAIN }}/health"; then exit 0; fi
+            sleep 10
+          done
+          echo "A API não respondeu em https://${{ vars.API_DOMAIN }}/health"
+          exit 1

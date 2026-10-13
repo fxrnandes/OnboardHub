@@ -1,0 +1,12 @@
+#cloud-config
+package_update: true
+packages:
+  - ca-certificates
+  - curl
+runcmd:
+  - curl -fsSL https://get.docker.com | sh
+  - usermod -aG docker azureuser
+  - mkdir -p /opt/onboardhub
+  - chown azureuser:azureuser /opt/onboardhub
+  - fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+  - echo '/swapfile none swap sw 0 0' >> /etc/fstab
