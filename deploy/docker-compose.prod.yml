@@ -26,8 +26,8 @@ services:
       db:
         condition: service_healthy
 
-  caddy:
-    image: caddy:2
+  web:
+    image: ${WEB_IMAGE:-ghcr.io/fxrnandes/onboardhub-web:latest}
     restart: unless-stopped
     ports:
       - "80:80"

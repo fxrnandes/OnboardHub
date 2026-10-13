@@ -1,4 +1,13 @@
 {$API_DOMAIN} {
 	encode gzip
-	reverse_proxy api:3333
+
+	handle_path /api/* {
+		reverse_proxy api:3333
+	}
+
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
 }

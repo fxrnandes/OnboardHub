@@ -8,7 +8,7 @@ on:
 jobs:
   backend:
     name: Backend - testes e cobertura
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:16
@@ -26,9 +26,9 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -46,19 +46,47 @@ jobs:
       - name: Build
         run: npm run build
 
+  frontend:
+    name: Frontend - testes e cobertura
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Checar tipos
+        run: npm run typecheck
+
+      - name: Testes com cobertura (mínimo 25%)
+        run: npm run test:coverage
+
+      - name: Build
+        run: npm run build
+
   deploy:
     name: Deploy na Azure
-    needs: backend
+    needs: [backend, frontend]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: production
     permissions:
       contents: read
       packages: write
     env:
-      IMAGE: ghcr.io/${{ github.repository_owner }}/onboardhub-api
+      API_IMAGE: ghcr.io/${{ github.repository_owner }}/onboardhub-api
+      WEB_IMAGE: ghcr.io/${{ github.repository_owner }}/onboardhub-web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: docker/login-action@v3
         with:
@@ -66,13 +94,23 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: docker/build-push-action@v6
+      - name: Imagem da API
+        uses: docker/build-push-action@v6
         with:
           context: backend
           push: true
           tags: |
-            ${{ env.IMAGE }}:latest
-            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.API_IMAGE }}:latest
+            ${{ env.API_IMAGE }}:${{ github.sha }}
+
+      - name: Imagem do frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          push: true
+          tags: |
+            ${{ env.WEB_IMAGE }}:latest
+            ${{ env.WEB_IMAGE }}:${{ github.sha }}
 
       - name: Enviar arquivos de deploy para o servidor
         uses: appleboy/scp-action@v0.1.7
@@ -89,7 +127,8 @@ jobs:
         env:
           GHCR_USER: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          API_IMAGE: ${{ env.IMAGE }}:${{ github.sha }}
+          API_IMAGE: ${{ env.API_IMAGE }}:${{ github.sha }}
+          WEB_IMAGE: ${{ env.WEB_IMAGE }}:${{ github.sha }}
           API_DOMAIN: ${{ vars.API_DOMAIN }}
           APP_URL: ${{ vars.APP_URL }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
@@ -98,13 +137,14 @@ jobs:
           host: ${{ secrets.AZURE_VM_HOST }}
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.AZURE_VM_SSH_KEY }}
-          envs: GHCR_USER,GHCR_TOKEN,API_IMAGE,API_DOMAIN,APP_URL,POSTGRES_PASSWORD,JWT_SECRET
+          envs: GHCR_USER,GHCR_TOKEN,API_IMAGE,WEB_IMAGE,API_DOMAIN,APP_URL,POSTGRES_PASSWORD,JWT_SECRET
           script: |
             set -e
             cd /opt/onboardhub
             umask 077
             cat > .env <<ENV
             API_IMAGE=$API_IMAGE
+            WEB_IMAGE=$WEB_IMAGE
             API_DOMAIN=$API_DOMAIN
             APP_URL=$APP_URL
             POSTGRES_PASSWORD=$POSTGRES_PASSWORD
@@ -116,11 +156,11 @@ jobs:
             docker logout ghcr.io
             docker image prune -f
 
-      - name: Conferir se a API está no ar
+      - name: Conferir se a aplicação está no ar
         run: |
           for i in $(seq 1 30); do
-            if curl -fsS "https://${{ vars.API_DOMAIN }}/health"; then exit 0; fi
+            if curl -fsS "https://${{ vars.API_DOMAIN }}/api/health" && curl -fsS -o /dev/null "https://${{ vars.API_DOMAIN }}/"; then exit 0; fi
             sleep 10
           done
-          echo "A API não respondeu em https://${{ vars.API_DOMAIN }}/health"
+          echo "A aplicação não respondeu em https://${{ vars.API_DOMAIN }}"
           exit 1

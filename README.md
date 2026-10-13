@@ -65,6 +65,22 @@ npm run test:coverage  # testes com relatório de cobertura
 
 ---
 
+## Como rodar o frontend
+
+Com a API rodando, em outro terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev            # interface em http://localhost:5173
+npm test               # testes
+npm run test:coverage  # testes com relatório de cobertura
+```
+
+Em desenvolvimento, as chamadas para `/api` são encaminhadas para `http://localhost:3333`. Em produção, o Caddy serve o frontend e encaminha `/api` para a API.
+
+---
+
 ## Autor
 
 **Vinicius Fernandes Carvalho**
