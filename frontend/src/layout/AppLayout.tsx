@@ -9,7 +9,10 @@ interface NavItem {
   roles?: Role[];
 }
 
-export const navItems: NavItem[] = [{ to: '/', label: 'Início' }];
+export const navItems: NavItem[] = [
+  { to: '/', label: 'Início' },
+  { to: '/equipe', label: 'Equipe', roles: ['master', 'gestor'] },
+];
 
 export function AppLayout() {
   const { session, logout } = useAuth();
