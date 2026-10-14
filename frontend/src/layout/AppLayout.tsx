@@ -11,6 +11,8 @@ interface NavItem {
 
 export const navItems: NavItem[] = [
   { to: '/', label: 'Início' },
+  { to: '/minhas-trilhas', label: 'Minhas trilhas' },
+  { to: '/trilhas', label: 'Gerenciar trilhas', roles: ['master', 'gestor'] },
   { to: '/equipe', label: 'Equipe', roles: ['master', 'gestor'] },
 ];
 
