@@ -9,7 +9,28 @@ import { TextAreaField } from '../../components/TextAreaField';
 import { useAction } from '../../components/useAction';
 import { useResource } from '../../components/useResource';
 import { useSubmit } from '../../components/useSubmit';
+import { FlowView } from './flow/FlowView';
 import { ModuleCard } from './ModuleCard';
+
+type EditorView = 'list' | 'flow';
+
+const viewKey = (trailId: string) => `onboardhub.editorView.${trailId}`;
+
+function readView(trailId: string): EditorView {
+  try {
+    return localStorage.getItem(viewKey(trailId)) === 'flow' ? 'flow' : 'list';
+  } catch {
+    return 'list';
+  }
+}
+
+function saveView(trailId: string, view: EditorView) {
+  try {
+    localStorage.setItem(viewKey(trailId), view);
+  } catch {
+    return;
+  }
+}
 
 export function TrailEditorPage() {
   const { id = '' } = useParams();
@@ -21,6 +42,12 @@ export function TrailEditorPage() {
   const [warnings, setWarnings] = useState<string[]>([]);
   const [saved, setSaved] = useState(false);
   const [moduleTitle, setModuleTitle] = useState('');
+  const [view, setView] = useState<EditorView>(() => readView(id));
+
+  function changeView(next: EditorView) {
+    setView(next);
+    saveView(id, next);
+  }
 
   const run = (task: () => Promise<unknown>) =>
     action.run(async () => {
@@ -176,37 +203,53 @@ export function TrailEditorPage() {
         </section>
 
         <section aria-labelledby="modulos-title" className="stack">
-          <h2 id="modulos-title">Módulos e passos</h2>
-          {current.modules.length ? (
-            current.modules.map((module, index) => (
-              <ModuleCard
-                key={module.id}
-                module={module}
-                index={index}
-                total={current.modules.length}
-                busy={action.pending}
-                run={run}
-                onMove={(offset) => moveModule(index, offset)}
-              />
-            ))
+          <div className="section-head">
+            <h2 id="modulos-title">Módulos e passos</h2>
+            <div className="segmented" role="group" aria-label="Modo de edição">
+              <button type="button" aria-pressed={view === 'list'} onClick={() => changeView('list')}>
+                Lista
+              </button>
+              <button type="button" aria-pressed={view === 'flow'} onClick={() => changeView('flow')}>
+                Fluxo
+              </button>
+            </div>
+          </div>
+          {view === 'flow' ? (
+            <FlowView trail={current} busy={action.pending} run={run} />
           ) : (
-            <EmptyState title="Nenhum módulo ainda">
-              Divida a trilha em módulos (ex.: "Primeiros passos", "Ferramentas") e adicione os passos dentro de cada um.
-            </EmptyState>
-          )}
+            <>
+              {current.modules.length ? (
+                current.modules.map((module, index) => (
+                  <ModuleCard
+                    key={module.id}
+                    module={module}
+                    index={index}
+                    total={current.modules.length}
+                    busy={action.pending}
+                    run={run}
+                    onMove={(offset) => moveModule(index, offset)}
+                  />
+                ))
+              ) : (
+                <EmptyState title="Nenhum módulo ainda">
+                  Divida a trilha em módulos (ex.: "Primeiros passos", "Ferramentas") e adicione os passos dentro de cada um.
+                </EmptyState>
+              )}
 
-          <form className="card inline-form" onSubmit={addModule.onSubmit} noValidate>
-            <Field
-              label="Novo módulo"
-              placeholder="Ex.: Primeiros passos"
-              value={moduleTitle}
-              onChange={(event) => setModuleTitle(event.target.value)}
-              error={addModule.fieldError('title') ?? addModule.formError ?? undefined}
-            />
-            <button type="submit" className="button" disabled={addModule.pending}>
-              Adicionar módulo
-            </button>
-          </form>
+              <form className="card inline-form" onSubmit={addModule.onSubmit} noValidate>
+                <Field
+                  label="Novo módulo"
+                  placeholder="Ex.: Primeiros passos"
+                  value={moduleTitle}
+                  onChange={(event) => setModuleTitle(event.target.value)}
+                  error={addModule.fieldError('title') ?? addModule.formError ?? undefined}
+                />
+                <button type="submit" className="button" disabled={addModule.pending}>
+                  Adicionar módulo
+                </button>
+              </form>
+            </>
+          )}
         </section>
       </div>
     </section>
