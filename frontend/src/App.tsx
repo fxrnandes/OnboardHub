@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router';
+import { AppGate } from './auth/AppGate';
 import { GuestOnly, RequireAuth } from './auth/guards';
-import { AppLayout } from './layout/AppLayout';
 import { AcceptInvitePage } from './pages/AcceptInvitePage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { HomePage } from './pages/HomePage';
@@ -22,7 +22,7 @@ export function App() {
       <Route path="/entrar" element={<GuestOnly><LoginPage /></GuestOnly>} />
       <Route path="/cadastro" element={<GuestOnly><SignupPage /></GuestOnly>} />
       <Route path="/convite/:token" element={<GuestOnly><AcceptInvitePage /></GuestOnly>} />
-      <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
+      <Route element={<AppGate />}>
         <Route index element={<HomePage />} />
         <Route path="minhas-trilhas" element={<MyTrailsPage />} />
         <Route path="minhas-trilhas/:id" element={<TrailPlayerPage />} />

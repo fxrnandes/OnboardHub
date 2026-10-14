@@ -5,9 +5,19 @@ import { mockFetch, session } from './support/fetch';
 import { renderApp } from './support/render';
 
 describe('autenticação', () => {
-  it('manda para o login quem não está logado', async () => {
+  it('mostra a landing em / e manda para o login nas páginas internas', async () => {
     mockFetch({});
     renderApp('/');
+    expect(await screen.findByRole('heading', { name: /Do primeiro dia à autonomia/ })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /Criar conta/ })[0]).toHaveAttribute('href', '/cadastro');
+
+    await userEvent.click(screen.getByRole('link', { name: 'Entrar' }));
+    expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeInTheDocument();
+  });
+
+  it('manda para o login quem tenta abrir uma página interna sem estar logado', async () => {
+    mockFetch({});
+    renderApp('/minhas-trilhas');
     expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeInTheDocument();
   });
 
@@ -98,14 +108,14 @@ describe('autenticação', () => {
     expect(await screen.findByRole('heading', { name: 'Olá, Ana' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Sair' }));
 
-    expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /Do primeiro dia à autonomia/ })).toBeInTheDocument();
     expect(tokenStorage.get()).toBeNull();
   });
 
   it('descarta token inválido', async () => {
     tokenStorage.set('expirado');
     mockFetch({ 'GET /auth/me': { status: 401, body: { error: { code: 'unauthorized', message: 'Sessão inválida.' } } } });
-    renderApp('/');
+    renderApp('/painel');
 
     expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeInTheDocument();
     expect(tokenStorage.get()).toBeNull();
