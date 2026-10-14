@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router';
 import { GuestOnly, RequireAuth } from './auth/guards';
 import { AppLayout } from './layout/AppLayout';
 import { AcceptInvitePage } from './pages/AcceptInvitePage';
+import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { HomePage } from './pages/HomePage';
 import { MyTrailsPage } from './pages/learning/MyTrailsPage';
 import { TrailPlayerPage } from './pages/learning/TrailPlayerPage';
@@ -25,6 +26,7 @@ export function App() {
         <Route index element={<HomePage />} />
         <Route path="minhas-trilhas" element={<MyTrailsPage />} />
         <Route path="minhas-trilhas/:id" element={<TrailPlayerPage />} />
+        <Route path="painel" element={<RequireAuth roles={['master', 'gestor']}><DashboardPage /></RequireAuth>} />
         <Route path="trilhas" element={<RequireAuth roles={['master', 'gestor']}><TrailsPage /></RequireAuth>} />
         <Route path="trilhas/:id" element={<RequireAuth roles={['master', 'gestor']}><TrailEditorPage /></RequireAuth>} />
         <Route path="equipe" element={<RequireAuth roles={['master', 'gestor']}><TeamLayout /></RequireAuth>}>

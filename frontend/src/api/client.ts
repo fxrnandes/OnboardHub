@@ -62,6 +62,28 @@ export async function request<T>(method: Method, path: string, body?: unknown): 
   return data as T;
 }
 
+export async function download(path: string, filename: string): Promise<void> {
+  const token = tokenStorage.get();
+  let response: Response;
+  try {
+    response = await fetch(`/api${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  } catch {
+    throw new ApiError(0, 'network_error', 'Não foi possível conectar ao servidor.');
+  }
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+    throw new ApiError(response.status, data?.error?.code ?? 'unknown_error', data?.error?.message ?? 'Não foi possível baixar o arquivo.');
+  }
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export const api = {
   get: <T>(path: string) => request<T>('GET', path),
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),

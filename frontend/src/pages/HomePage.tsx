@@ -20,6 +20,7 @@ export function HomePage() {
     { to: '/minhas-trilhas', title: 'Minhas trilhas', text: 'Continue o seu onboarding de onde parou.', tint: 'sky' },
     ...(manages
       ? [
+          { to: '/painel', title: 'Painel', text: 'Veja quem já concluiu e quem está parado.', tint: 'yellow' },
           { to: '/trilhas', title: 'Gerenciar trilhas', text: 'Monte módulos e passos e publique para os cargos.', tint: 'lavender' },
           { to: '/equipe', title: 'Equipe', text: 'Convide pessoas e organize os cargos.', tint: 'mint' },
         ]
