@@ -2127,3 +2127,30 @@ a.button.button-light:hover {
     align-items: flex-start;
   }
 }
+
+.page-narrow {
+  max-width: 640px;
+}
+
+.form-success {
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-tint-mint);
+  color: #12722a;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.sidebar-user .sidebar-user-name {
+  color: var(--color-charcoal);
+  font-weight: 600;
+}
+
+.sidebar-user .sidebar-user-name:hover {
+  color: var(--color-primary);
+}
+
+.sidebar-user .sidebar-user-name.active {
+  color: var(--color-primary);
+}

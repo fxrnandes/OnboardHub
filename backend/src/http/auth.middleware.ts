@@ -29,15 +29,15 @@ export const requireAuth =
       throw new AppError(401, 'unauthorized', 'Faça login para continuar.');
     }
 
-    let userId: string;
+    let payload: ReturnType<TokenService['verify']>;
     try {
-      userId = tokens.verify(token).sub;
+      payload = tokens.verify(token);
     } catch {
       throw invalidSession();
     }
 
-    const user = await new UserRepository(db).findById(userId);
-    if (!user) throw invalidSession();
+    const user = await new UserRepository(db).findById(payload.sub);
+    if (!user || user.sessionVersion !== payload.ver) throw invalidSession();
 
     req.auth = { userId: user.id, companyId: user.companyId, role: user.role, jobRoleId: user.jobRoleId };
     next();

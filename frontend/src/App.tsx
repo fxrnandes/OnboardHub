@@ -7,6 +7,7 @@ import { HomePage } from './pages/HomePage';
 import { MyTrailsPage } from './pages/learning/MyTrailsPage';
 import { TrailPlayerPage } from './pages/learning/TrailPlayerPage';
 import { LoginPage } from './pages/LoginPage';
+import { ProfilePage } from './pages/ProfilePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { SignupPage } from './pages/SignupPage';
 import { TrailEditorPage } from './pages/trails/TrailEditorPage';
@@ -24,6 +25,7 @@ export function App() {
       <Route path="/convite/:token" element={<GuestOnly><AcceptInvitePage /></GuestOnly>} />
       <Route element={<AppGate />}>
         <Route index element={<HomePage />} />
+        <Route path="perfil" element={<ProfilePage />} />
         <Route path="minhas-trilhas" element={<MyTrailsPage />} />
         <Route path="minhas-trilhas/:id" element={<TrailPlayerPage />} />
         <Route path="painel" element={<RequireAuth roles={['master', 'gestor']}><DashboardPage /></RequireAuth>} />

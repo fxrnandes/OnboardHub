@@ -9,6 +9,7 @@ export interface User {
   email: string;
   role: Role;
   jobRoleId: string | null;
+  sessionVersion: number;
   createdAt: Date;
 }
 
@@ -38,10 +39,11 @@ interface UserRow {
   password_hash: string;
   role: Role;
   job_role_id: string | null;
+  session_version: number;
   created_at: Date;
 }
 
-const columns = 'id, company_id, name, email, password_hash, role, job_role_id, created_at';
+const columns = 'id, company_id, name, email, password_hash, role, job_role_id, session_version, created_at';
 
 const toUser = (row: UserRow): UserWithPassword => ({
   id: row.id,
@@ -50,6 +52,7 @@ const toUser = (row: UserRow): UserWithPassword => ({
   email: row.email,
   role: row.role,
   jobRoleId: row.job_role_id,
+  sessionVersion: row.session_version,
   createdAt: row.created_at,
   passwordHash: row.password_hash,
 });
@@ -87,6 +90,27 @@ export class UserRepository {
   async findById(id: string): Promise<User | null> {
     const { rows } = await this.db.query<UserRow>(`select ${columns} from users where id = $1`, [id]);
     return rows[0] ? withoutPassword(toUser(rows[0])) : null;
+  }
+
+  async findByIdWithPassword(id: string): Promise<UserWithPassword | null> {
+    const { rows } = await this.db.query<UserRow>(`select ${columns} from users where id = $1`, [id]);
+    return rows[0] ? toUser(rows[0]) : null;
+  }
+
+  async rename(id: string, name: string): Promise<User> {
+    const { rows } = await this.db.query<UserRow>(
+      `update users set name = $2 where id = $1 returning ${columns}`,
+      [id, name.trim()],
+    );
+    return withoutPassword(toUser(rows[0]!));
+  }
+
+  async changePassword(id: string, passwordHash: string): Promise<User> {
+    const { rows } = await this.db.query<UserRow>(
+      `update users set password_hash = $2, session_version = session_version + 1 where id = $1 returning ${columns}`,
+      [id, passwordHash],
+    );
+    return withoutPassword(toUser(rows[0]!));
   }
 
   async findInCompany(companyId: string, id: string): Promise<User | null> {

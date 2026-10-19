@@ -12,6 +12,15 @@ const signupSchema = z.object({
   password: z.string().min(8, 'A senha precisa ter pelo menos 8 caracteres.').max(72),
 });
 
+const name = z.string().trim().min(2, 'O nome precisa ter pelo menos 2 caracteres.').max(120);
+
+const profileSchema = z.object({ name });
+
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1, 'Informe a senha atual.'),
+  newPassword: z.string().min(8, 'A nova senha precisa ter pelo menos 8 caracteres.').max(72),
+});
+
 const loginSchema = z.object({
   email,
   password: z.string().min(1, 'Informe a senha.'),
@@ -35,6 +44,16 @@ export function authRoutes(auth: AuthService, requireAuth: RequestHandler): Rout
   router.get('/me', requireAuth, async (req, res) => {
     const { user, company } = await auth.me(req.auth!.userId);
     res.json({ user: publicUser(user), company: { id: company.id, name: company.name } });
+  });
+
+  router.patch('/me', requireAuth, async (req, res) => {
+    const { name: newName } = profileSchema.parse(req.body);
+    res.json({ user: publicUser(await auth.rename(req.auth!.userId, newName)) });
+  });
+
+  router.put('/password', requireAuth, async (req, res) => {
+    const { currentPassword, newPassword } = passwordSchema.parse(req.body);
+    res.json({ token: await auth.changePassword(req.auth!.userId, currentPassword, newPassword) });
   });
 
   return router;

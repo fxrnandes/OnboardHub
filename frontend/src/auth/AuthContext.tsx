@@ -8,6 +8,7 @@ interface AuthContextValue {
   status: Status;
   session: Session | null;
   startSession: (token: string) => Promise<void>;
+  refresh: () => Promise<void>;
   logout: () => void;
 }
 
@@ -46,7 +47,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('anonymous');
   }, []);
 
-  const value = useMemo(() => ({ status, session, startSession, logout }), [status, session, startSession, logout]);
+  const value = useMemo(
+    () => ({ status, session, startSession, refresh: loadSession, logout }),
+    [status, session, startSession, loadSession, logout],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

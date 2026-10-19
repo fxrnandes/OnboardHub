@@ -36,7 +36,9 @@ export function AppLayout() {
           ))}
         </nav>
         <div className="sidebar-user">
-          <strong>{user.name}</strong>
+          <NavLink to="/perfil" className="sidebar-user-name">
+            {user.name}
+          </NavLink>
           <span className="badge">{roleLabels[user.role]}</span>
           <button type="button" className="link-button" onClick={logout}>
             Sair

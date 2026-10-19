@@ -7,7 +7,8 @@ describe('TokenService', () => {
   it('gera um token e lê de volta os mesmos dados', () => {
     const tokens = new TokenService('segredo');
 
-    expect(tokens.verify(tokens.sign(payload))).toEqual(payload);
+    expect(tokens.verify(tokens.sign(payload))).toEqual({ ...payload, ver: 0 });
+    expect(tokens.verify(tokens.sign({ ...payload, ver: 3 })).ver).toBe(3);
   });
 
   it('recusa token assinado com outro segredo', () => {

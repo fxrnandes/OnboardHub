@@ -50,6 +50,9 @@ export const authApi = {
   signup: (input: SignupInput) => api.post<{ token: string } & Session>('/auth/signup', input),
   login: (input: LoginInput) => api.post<{ token: string; user: User }>('/auth/login', input),
   me: () => api.get<Session>('/auth/me'),
+  updateProfile: (name: string) => api.patch<{ user: User }>('/auth/me', { name }).then((data) => data.user),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    api.put<{ token: string }>('/auth/password', { currentPassword, newPassword }).then((data) => data.token),
   previewInvite: (token: string) =>
     api.get<{ invite: InvitePreview }>(`/invites/token/${encodeURIComponent(token)}`),
   acceptInvite: (token: string, input: AcceptInviteInput) =>

@@ -5,6 +5,7 @@ export interface TokenPayload {
   sub: string;
   companyId: string;
   role: Role;
+  ver?: number;
 }
 
 export class TokenService {
@@ -14,7 +15,7 @@ export class TokenService {
   ) {}
 
   sign(payload: TokenPayload): string {
-    return jwt.sign({ companyId: payload.companyId, role: payload.role }, this.secret, {
+    return jwt.sign({ companyId: payload.companyId, role: payload.role, ver: payload.ver ?? 0 }, this.secret, {
       subject: payload.sub,
       expiresIn: this.expiresIn,
     });
@@ -22,6 +23,6 @@ export class TokenService {
 
   verify(token: string): TokenPayload {
     const decoded = jwt.verify(token, this.secret) as jwt.JwtPayload;
-    return { sub: decoded.sub!, companyId: decoded.companyId, role: decoded.role };
+    return { sub: decoded.sub!, companyId: decoded.companyId, role: decoded.role, ver: decoded.ver ?? 0 };
   }
 }

@@ -68,7 +68,24 @@ export class AuthService {
     return { user, company };
   }
 
+  async rename(userId: string, name: string): Promise<User> {
+    return new UserRepository(this.pool).rename(userId, name);
+  }
+
+  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<string> {
+    const users = new UserRepository(this.pool);
+    const found = await users.findByIdWithPassword(userId);
+    if (!found || !(await verifyPassword(currentPassword, found.passwordHash))) {
+      throw new AppError(400, 'wrong_password', 'A senha atual está incorreta.');
+    }
+    if (currentPassword === newPassword) {
+      throw new AppError(400, 'same_password', 'A nova senha precisa ser diferente da atual.');
+    }
+    const user = await users.changePassword(userId, await hashPassword(newPassword));
+    return this.issueToken(user);
+  }
+
   private issueToken(user: User): string {
-    return this.tokens.sign({ sub: user.id, companyId: user.companyId, role: user.role });
+    return this.tokens.sign({ sub: user.id, companyId: user.companyId, role: user.role, ver: user.sessionVersion });
   }
 }
