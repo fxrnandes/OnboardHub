@@ -116,7 +116,7 @@ export class TrailService {
       }
       await trails.setJobRoles(companyId, id, unique);
       await trails.touch(id);
-      return unique.sort();
+      return unique.sort((a, b) => a.localeCompare(b));
     });
   }
 

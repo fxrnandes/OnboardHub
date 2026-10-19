@@ -5,7 +5,7 @@ import { overview, relativeDate, statusOf, type ProgressRow } from '../src/api/r
 import { mockFetch, session, type Routes } from './support/fetch';
 import { renderApp } from './support/render';
 
-const NOW = new Date('2026-10-13T12:00:00Z').getTime();
+const NOW = Date.now();
 const daysAgo = (days: number) => new Date(NOW - days * 24 * 60 * 60 * 1000).toISOString();
 
 function row(overrides: Partial<ProgressRow>): ProgressRow {
