@@ -17,4 +17,4 @@ USER node
 EXPOSE 3333
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
   CMD wget -qO- http://localhost:3333/health || exit 1
-CMD ["sh", "-c", "node dist/db/migrate.cli.js && node dist/server.js"]
+CMD ["sh", "-c", "node dist/db/migrate.cli.js && node --import newrelic/esm-loader.mjs -r newrelic dist/server.js"]

@@ -22,6 +22,12 @@ services:
       DATABASE_URL: postgres://onboardhub:${POSTGRES_PASSWORD}@db:5432/onboardhub
       JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no .env}
       APP_URL: ${APP_URL:-http://localhost:5173}
+      NEW_RELIC_ENABLED: ${NEW_RELIC_ENABLED:-false}
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY:-}
+      NEW_RELIC_APP_NAME: OnboardHub API
+      NEW_RELIC_NO_CONFIG_FILE: "true"
+      NEW_RELIC_LOG: stdout
+      NEW_RELIC_LOG_LEVEL: warn
     depends_on:
       db:
         condition: service_healthy
