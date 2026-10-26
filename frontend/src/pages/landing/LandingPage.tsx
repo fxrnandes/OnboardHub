@@ -57,7 +57,7 @@ export function LandingPage() {
 
       <main>
         <section className="landing-hero">
-          <div className="auth-dots" aria-hidden="true">
+          <div className="hero-dots" aria-hidden="true">
             <span />
             <span />
             <span />

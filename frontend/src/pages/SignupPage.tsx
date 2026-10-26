@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router';
 import { authApi } from '../api/auth';
 import { useAuth } from '../auth/AuthContext';
 import { Field } from '../components/Field';
+import { SocialSignIn } from '../components/SocialSignIn';
 import { FormAlert } from '../components/FormAlert';
+import { PasswordField } from '../components/PasswordField';
 import { useSubmit } from '../components/useSubmit';
 import { AuthLayout } from '../layout/AuthLayout';
 
@@ -23,6 +25,7 @@ export function SignupPage() {
 
   return (
     <AuthLayout title="Cadastre sua empresa" subtitle="Você será o administrador da conta.">
+      <SocialSignIn />
       <form onSubmit={onSubmit} noValidate>
         <FormAlert message={formError} />
         <Field
@@ -37,15 +40,15 @@ export function SignupPage() {
         <Field
           label="E-mail"
           type="email"
+          placeholder="voce@empresa.com"
           autoComplete="email"
           value={form.email}
           onChange={update('email')}
           error={fieldError('email')}
           required
         />
-        <Field
+        <PasswordField
           label="Senha"
-          type="password"
           autoComplete="new-password"
           hint="Mínimo de 8 caracteres."
           value={form.password}

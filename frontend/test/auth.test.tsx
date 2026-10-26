@@ -15,6 +15,14 @@ describe('autenticação', () => {
     expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeInTheDocument();
   });
 
+  it('volta para a landing pelo logo da tela de login', async () => {
+    mockFetch({});
+    renderApp('/entrar');
+
+    await userEvent.click(await screen.findByRole('link', { name: 'OnboardHub, voltar ao início' }));
+    expect(await screen.findByRole('heading', { name: /Do primeiro dia à autonomia/ })).toBeInTheDocument();
+  });
+
   it('manda para o login quem tenta abrir uma página interna sem estar logado', async () => {
     mockFetch({});
     renderApp('/minhas-trilhas');
@@ -53,6 +61,32 @@ describe('autenticação', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('E-mail ou senha incorretos.');
     expect(tokenStorage.get()).toBeNull();
+  });
+
+  it('mostra e esconde a senha pelo ícone de olho', async () => {
+    mockFetch({});
+    renderApp('/entrar');
+
+    const password = screen.getByLabelText('Senha');
+    await userEvent.type(password, 'segredo123');
+    expect(password).toHaveAttribute('type', 'password');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Mostrar senha' }));
+    expect(password).toHaveAttribute('type', 'text');
+    expect(password).toHaveValue('segredo123');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ocultar senha' }));
+    expect(password).toHaveAttribute('type', 'password');
+  });
+
+  it.each(['/entrar', '/cadastro'])('mostra o botão do Google em %s avisando que ainda não está disponível', async (path) => {
+    const { calls } = mockFetch({});
+    renderApp(path);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Continuar com Google' }));
+
+    expect(await screen.findByRole('status')).toHaveTextContent('O acesso com Google estará disponível em breve.');
+    expect(calls).toHaveLength(0);
   });
 
   it('cadastra a empresa e entra como administrador', async () => {

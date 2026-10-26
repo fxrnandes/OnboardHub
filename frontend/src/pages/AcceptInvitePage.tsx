@@ -5,6 +5,7 @@ import { ApiError } from '../api/client';
 import { useAuth } from '../auth/AuthContext';
 import { Field } from '../components/Field';
 import { FormAlert } from '../components/FormAlert';
+import { PasswordField } from '../components/PasswordField';
 import { useSubmit } from '../components/useSubmit';
 import { AuthLayout } from '../layout/AuthLayout';
 
@@ -49,7 +50,13 @@ export function AcceptInvitePage() {
     );
   }
 
-  if (!invite) return <p className="page-loading">Carregando convite…</p>;
+  if (!invite) {
+    return (
+      <AuthLayout title="Aceitar convite">
+        <p className="auth-loading">Carregando convite…</p>
+      </AuthLayout>
+    );
+  }
 
   const subtitle = `${invite.companyName} convidou você como ${roleLabels[invite.role].toLowerCase()}${
     invite.jobRoleName ? ` (${invite.jobRoleName})` : ''
@@ -73,9 +80,8 @@ export function AcceptInvitePage() {
             required
           />
         )}
-        <Field
+        <PasswordField
           label="Crie uma senha"
-          type="password"
           autoComplete="new-password"
           hint="Mínimo de 8 caracteres."
           value={form.password}
