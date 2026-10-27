@@ -16,5 +16,16 @@ services:
       timeout: 5s
       retries: 10
 
+  pgweb:
+    image: sosedoff/pgweb:0.17.0
+    container_name: onboardhub-pgweb
+    environment:
+      DATABASE_URL: postgres://onboardhub:onboardhub@db:5432/onboardhub?sslmode=disable
+    ports:
+      - "8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+
 volumes:
   db-data:
