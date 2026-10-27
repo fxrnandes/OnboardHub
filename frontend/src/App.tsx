@@ -2,12 +2,14 @@ import { Navigate, Route, Routes } from 'react-router';
 import { AppGate } from './auth/AppGate';
 import { GuestOnly, RequireAuth } from './auth/guards';
 import { AcceptInvitePage } from './pages/AcceptInvitePage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
 import { HomePage } from './pages/HomePage';
 import { MyTrailsPage } from './pages/learning/MyTrailsPage';
 import { TrailPlayerPage } from './pages/learning/TrailPlayerPage';
 import { LoginPage } from './pages/LoginPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { SignupPage } from './pages/SignupPage';
 import { TrailEditorPage } from './pages/trails/TrailEditorPage';
@@ -22,6 +24,8 @@ export function App() {
     <Routes>
       <Route path="/entrar" element={<GuestOnly><LoginPage /></GuestOnly>} />
       <Route path="/cadastro" element={<GuestOnly><SignupPage /></GuestOnly>} />
+      <Route path="/esqueci-senha" element={<GuestOnly><ForgotPasswordPage /></GuestOnly>} />
+      <Route path="/redefinir-senha/:token" element={<GuestOnly><ResetPasswordPage /></GuestOnly>} />
       <Route path="/convite/:token" element={<GuestOnly><AcceptInvitePage /></GuestOnly>} />
       <Route element={<AppGate />}>
         <Route index element={<HomePage />} />

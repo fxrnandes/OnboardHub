@@ -28,6 +28,11 @@ services:
       NEW_RELIC_NO_CONFIG_FILE: "true"
       NEW_RELIC_LOG: stdout
       NEW_RELIC_LOG_LEVEL: warn
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-}
     depends_on:
       db:
         condition: service_healthy

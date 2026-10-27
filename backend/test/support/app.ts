@@ -1,14 +1,33 @@
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { createApp } from '../../src/app.js';
+import type { MailMessage, Mailer } from '../../src/modules/mail/mailer.js';
 import { createTestPool } from './db.js';
 
 export const TEST_JWT_SECRET = 'segredo-dos-testes';
 
+export class MemoryMailer implements Mailer {
+  readonly sent: MailMessage[] = [];
+  failNext = false;
+
+  async send(message: MailMessage): Promise<void> {
+    if (this.failNext) {
+      this.failNext = false;
+      throw new Error('SMTP indisponível');
+    }
+    this.sent.push(message);
+  }
+
+  lastTo(to: string): MailMessage | undefined {
+    return this.sent.filter((message) => message.to === to).at(-1);
+  }
+}
+
 export function createTestApp() {
   const pool = createTestPool();
-  const app = createApp({ pool, jwtSecret: TEST_JWT_SECRET, appUrl: 'http://app.teste' });
-  return { app, pool };
+  const mailer = new MemoryMailer();
+  const app = createApp({ pool, jwtSecret: TEST_JWT_SECRET, appUrl: 'http://app.teste', mailer });
+  return { app, pool, mailer };
 }
 
 export const uniqueEmail = (prefix = 'pessoa') => `${prefix}-${randomUUID().slice(0, 8)}@teste.com`;

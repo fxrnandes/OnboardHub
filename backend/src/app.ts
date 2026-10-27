@@ -4,9 +4,11 @@ import { requireAuth } from './http/auth.middleware.js';
 import { errorHandler } from './http/errors.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { AuthService } from './modules/auth/auth.service.js';
+import { PasswordResetService } from './modules/auth/password-reset.service.js';
 import { TokenService } from './modules/auth/token.js';
 import { inviteRoutes } from './modules/invites/invite.routes.js';
 import { InviteService } from './modules/invites/invite.service.js';
+import { LogMailer, type Mailer } from './modules/mail/mailer.js';
 import { learningRoutes } from './modules/learning/learning.routes.js';
 import { LearningService } from './modules/learning/learning.service.js';
 import { jobRoleRoutes } from './modules/job-roles/job-role.routes.js';
@@ -20,9 +22,10 @@ export interface AppDependencies {
   pool: pg.Pool;
   jwtSecret: string;
   appUrl: string;
+  mailer?: Mailer;
 }
 
-export function createApp({ pool, jwtSecret, appUrl }: AppDependencies): Express {
+export function createApp({ pool, jwtSecret, appUrl, mailer = new LogMailer() }: AppDependencies): Express {
   const app = express();
   const tokens = new TokenService(jwtSecret);
   const authenticated = requireAuth(tokens, pool);
@@ -30,7 +33,8 @@ export function createApp({ pool, jwtSecret, appUrl }: AppDependencies): Express
   app.use(express.json());
 
   app.use('/health', healthRouter);
-  app.use('/auth', authRoutes(new AuthService(pool, tokens), authenticated));
+  const resets = new PasswordResetService(pool, tokens, mailer, appUrl);
+  app.use('/auth', authRoutes(new AuthService(pool, tokens), resets, authenticated));
   app.use('/job-roles', jobRoleRoutes(pool, authenticated));
   app.use('/members', memberRoutes(pool, authenticated));
   app.use('/invites', inviteRoutes(pool, new InviteService(pool, tokens, appUrl), authenticated));

@@ -39,6 +39,11 @@ export function LoginPage() {
         />
         <PasswordField
           label="Senha"
+          action={
+            <Link to="/esqueci-senha" state={{ email: email.trim() }} className="field-action">
+              Esqueci a senha
+            </Link>
+          }
           autoComplete="current-password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}

@@ -53,6 +53,11 @@ export const authApi = {
   updateProfile: (name: string) => api.patch<{ user: User }>('/auth/me', { name }).then((data) => data.user),
   changePassword: (currentPassword: string, newPassword: string) =>
     api.put<{ token: string }>('/auth/password', { currentPassword, newPassword }).then((data) => data.token),
+  requestPasswordReset: (email: string) => api.post<{ ok: true }>('/auth/password-resets', { email }),
+  previewPasswordReset: (token: string) =>
+    api.get<{ email: string }>(`/auth/password-resets/${encodeURIComponent(token)}`),
+  resetPassword: (token: string, password: string) =>
+    api.post<{ token: string; user: User }>(`/auth/password-resets/${encodeURIComponent(token)}`, { password }),
   previewInvite: (token: string) =>
     api.get<{ invite: InvitePreview }>(`/invites/token/${encodeURIComponent(token)}`),
   acceptInvite: (token: string, input: AcceptInviteInput) =>
