@@ -30,6 +30,20 @@ export function createTestApp() {
   return { app, pool, mailer };
 }
 
+const CNPJ_WEIGHTS = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+
+function checkDigit(base: string): number {
+  const weights = CNPJ_WEIGHTS.slice(CNPJ_WEIGHTS.length - base.length);
+  const sum = [...base].reduce((total, char, index) => total + (char.charCodeAt(0) - 48) * weights[index]!, 0);
+  const rest = sum % 11;
+  return rest < 2 ? 0 : 11 - rest;
+}
+
+export function validCnpj(base = `${Math.floor(Math.random() * 1e8)}`.padStart(8, '0') + '0001'): string {
+  const first = checkDigit(base);
+  return `${base}${first}${checkDigit(`${base}${first}`)}`;
+}
+
 export const uniqueEmail = (prefix = 'pessoa') => `${prefix}-${randomUUID().slice(0, 8)}@teste.com`;
 
 type App = ReturnType<typeof createTestApp>['app'];
@@ -48,7 +62,7 @@ export function client(app: App, token: string) {
 export async function newCompany(app: App, companyName = 'Empresa Teste') {
   const res = await request(app)
     .post('/auth/signup')
-    .send({ companyName, name: 'Maria Master', email: uniqueEmail('master'), password: 'senha-forte-123' });
+    .send({ companyName, cnpj: validCnpj(), name: 'Maria Master', email: uniqueEmail('master'), password: 'senha-forte-123' });
   return { master: client(app, res.body.token), masterId: res.body.user.id as string, companyId: res.body.company.id as string };
 }
 

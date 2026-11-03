@@ -1,5 +1,6 @@
 import { Router, type RequestHandler } from 'express';
 import { z } from 'zod';
+import { isValidCnpj, normalizeCnpj } from '../companies/cnpj.js';
 import type { User } from '../users/user.repository.js';
 import type { AuthService } from './auth.service.js';
 import type { PasswordResetService } from './password-reset.service.js';
@@ -10,6 +11,10 @@ const newPassword = z.string().min(8, 'A senha precisa ter pelo menos 8 caracter
 
 const signupSchema = z.object({
   companyName: z.string().trim().min(2, 'O nome da empresa precisa ter pelo menos 2 caracteres.').max(120),
+  cnpj: z
+    .string({ error: 'Informe o CNPJ da empresa.' })
+    .transform(normalizeCnpj)
+    .pipe(z.string().min(1, { error: 'Informe o CNPJ da empresa.', abort: true }).refine(isValidCnpj, 'CNPJ inválido.')),
   name: z.string().trim().min(2, 'O nome precisa ter pelo menos 2 caracteres.').max(120),
   email,
   password: newPassword,
@@ -40,7 +45,7 @@ export function authRoutes(auth: AuthService, resets: PasswordResetService, requ
 
   router.post('/signup', async (req, res) => {
     const { token, user, company } = await auth.signup(signupSchema.parse(req.body));
-    res.status(201).json({ token, user: publicUser(user), company: { id: company.id, name: company.name } });
+    res.status(201).json({ token, user: publicUser(user), company: { id: company.id, name: company.name, cnpj: company.cnpj } });
   });
 
   router.post('/login', async (req, res) => {

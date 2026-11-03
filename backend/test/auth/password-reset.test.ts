@@ -1,6 +1,6 @@
 import request from 'supertest';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { client, createTestApp, uniqueEmail } from '../support/app.js';
+import { client, createTestApp, uniqueEmail, validCnpj } from '../support/app.js';
 
 const { app, pool, mailer } = createTestApp();
 afterAll(() => pool.end());
@@ -12,7 +12,7 @@ beforeEach(async () => {
   email = uniqueEmail('esqueci');
   const res = await request(app)
     .post('/auth/signup')
-    .send({ companyName: 'Padaria Central', name: 'Bia Souza', email, password: 'senha-antiga-123' });
+    .send({ companyName: 'Padaria Central', cnpj: validCnpj(), name: 'Bia Souza', email, password: 'senha-antiga-123' });
   sessionToken = res.body.token;
 });
 

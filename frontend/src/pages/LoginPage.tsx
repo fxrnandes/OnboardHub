@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router';
 import { authApi } from '../api/auth';
 import { useAuth } from '../auth/AuthContext';
@@ -9,33 +9,73 @@ import { SocialSignIn } from '../components/SocialSignIn';
 import { useSubmit } from '../components/useSubmit';
 import { AuthLayout } from '../layout/AuthLayout';
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type Errors = Partial<Record<'email' | 'password', string>>;
+
 export function LoginPage() {
   const { startSession } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState<Errors>({});
+  const [attempt, setAttempt] = useState(0);
+  const formRef = useRef<HTMLFormElement>(null);
 
-  const { pending, onSubmit, fieldError, formError } = useSubmit(async () => {
+  const { pending, error, onSubmit, fieldError, formError } = useSubmit(async () => {
     const { token } = await authApi.login({ email: email.trim(), password });
     await startSession(token);
     const from = (location.state as { from?: string } | null)?.from;
     navigate(from ?? '/', { replace: true });
   });
 
+  const wrongCredentials = error?.code === 'invalid_credentials';
+
+  useEffect(() => {
+    if (wrongCredentials) {
+      formRef.current?.querySelector<HTMLInputElement>('input[autocomplete="current-password"]')?.focus();
+      return;
+    }
+    formRef.current?.querySelector<HTMLInputElement>('input[aria-invalid="true"]')?.focus();
+  }, [attempt, error, wrongCredentials]);
+
+  function submit(event: FormEvent) {
+    const found: Errors = {};
+    if (!emailPattern.test(email.trim())) found.email = 'Informe um e-mail válido.';
+    if (!password) found.password = 'Informe a senha.';
+    setErrors(found);
+    setAttempt((current) => current + 1);
+    if (Object.keys(found).length > 0) {
+      event.preventDefault();
+      return;
+    }
+    void onSubmit(event);
+  }
+
+  function edit(field: keyof Errors, setter: (value: string) => void) {
+    return (event: React.ChangeEvent<HTMLInputElement>) => {
+      setter(event.target.value);
+      setErrors(({ [field]: _, ...rest }) => rest);
+    };
+  }
+
+  const credentialsMessage = wrongCredentials && !errors.email && !errors.password ? error.message : undefined;
+
   return (
     <AuthLayout title="Entrar">
       <SocialSignIn />
-      <form onSubmit={onSubmit} noValidate>
-        <FormAlert message={formError} />
+      <form ref={formRef} onSubmit={submit} noValidate>
+        <FormAlert message={wrongCredentials ? null : formError} />
         <Field
           label="E-mail"
           type="email"
           placeholder="voce@empresa.com"
           autoComplete="email"
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          error={fieldError('email')}
+          onChange={edit('email', setEmail)}
+          error={errors.email ?? fieldError('email')}
+          aria-invalid={credentialsMessage ? true : undefined}
         />
         <PasswordField
           label="Senha"
@@ -46,8 +86,8 @@ export function LoginPage() {
           }
           autoComplete="current-password"
           value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          error={fieldError('password')}
+          onChange={edit('password', setPassword)}
+          error={errors.password ?? fieldError('password') ?? credentialsMessage}
         />
         <button type="submit" className="button" disabled={pending}>
           {pending ? 'Entrando…' : 'Entrar'}

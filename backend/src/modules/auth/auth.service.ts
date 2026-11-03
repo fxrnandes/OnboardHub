@@ -8,6 +8,7 @@ import type { TokenService } from './token.js';
 
 export interface SignupInput {
   companyName: string;
+  cnpj: string;
   name: string;
   email: string;
   password: string;
@@ -31,7 +32,7 @@ export class AuthService {
 
     try {
       const { user, company } = await withTransaction(this.pool, async (client) => {
-        const company = await new CompanyRepository(client).create(input.companyName);
+        const company = await new CompanyRepository(client).create(input.companyName, input.cnpj);
         const user = await new UserRepository(client).create({
           companyId: company.id,
           name: input.name,
@@ -43,7 +44,11 @@ export class AuthService {
       });
       return { token: this.issueToken(user), user, company };
     } catch (error) {
-      if ((error as { code?: string }).code === UNIQUE_VIOLATION) {
+      const { code, constraint } = error as { code?: string; constraint?: string };
+      if (code === UNIQUE_VIOLATION && constraint === 'companies_cnpj_unique') {
+        throw new AppError(409, 'cnpj_already_registered', 'Já existe uma empresa cadastrada com este CNPJ.');
+      }
+      if (code === UNIQUE_VIOLATION) {
         throw new AppError(409, 'email_already_registered', 'Já existe uma conta com este e-mail.');
       }
       throw error;

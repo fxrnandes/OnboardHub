@@ -1,7 +1,7 @@
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { TokenService } from '../../src/modules/auth/token.js';
-import { createTestApp, TEST_JWT_SECRET, uniqueEmail } from '../support/app.js';
+import { createTestApp, TEST_JWT_SECRET, uniqueEmail, validCnpj } from '../support/app.js';
 
 const { app, pool } = createTestApp();
 afterAll(() => pool.end());
@@ -11,7 +11,7 @@ let token: string;
 beforeAll(async () => {
   const res = await request(app)
     .post('/auth/signup')
-    .send({ companyName: 'Mercado Central', name: 'Bia', email: uniqueEmail('bia'), password: 'senha-forte-123' });
+    .send({ companyName: 'Mercado Central', cnpj: validCnpj(), name: 'Bia', email: uniqueEmail('bia'), password: 'senha-forte-123' });
   token = res.body.token;
 });
 

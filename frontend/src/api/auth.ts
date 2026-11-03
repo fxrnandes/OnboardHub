@@ -21,10 +21,11 @@ export interface Session {
 }
 
 export interface SignupInput {
-  companyName: string;
   name: string;
   email: string;
   password: string;
+  companyName: string;
+  cnpj: string;
 }
 
 export interface LoginInput {

@@ -8,11 +8,11 @@ interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
   trailing?: ReactNode;
 }
 
-export function Field({ label, error, hint, action, trailing, ...input }: FieldProps) {
+export function Field({ label, error, hint, action, trailing, 'aria-invalid': invalid, ...input }: FieldProps) {
   const id = useId();
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
   const labelElement = <label htmlFor={id}>{label}</label>;
-  const inputElement = <input id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...input} />;
+  const inputElement = <input id={id} aria-invalid={error ? true : invalid} aria-describedby={describedBy} {...input} />;
 
   return (
     <div className="field">
