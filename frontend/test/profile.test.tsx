@@ -17,7 +17,7 @@ describe('meu perfil', () => {
     });
     renderApp('/');
 
-    await userEvent.click(await screen.findByRole('link', { name: /Ana Souza/ }));
+    await userEvent.click(await screen.findByRole('link', { name: /^Ana/ }));
     expect(screen.getByRole('heading', { name: 'Meu perfil' })).toBeInTheDocument();
     expect(screen.getByLabelText('E-mail')).toHaveValue('ana@empresa.com');
     expect(screen.getByRole('button', { name: 'Salvar nome' })).toBeDisabled();
@@ -29,7 +29,7 @@ describe('meu perfil', () => {
 
     expect(await screen.findByText('Salvo')).toBeInTheDocument();
     expect(calls.find((call) => call.method === 'PATCH')!.body).toEqual({ name: 'Ana Paula Souza' });
-    expect(screen.getByRole('link', { name: /Ana Paula Souza/ })).toBeInTheDocument();
+    expect(screen.getByLabelText('Nome')).toHaveValue('Ana Paula Souza');
   });
 
   it('troca a senha e passa a usar o token novo', async () => {

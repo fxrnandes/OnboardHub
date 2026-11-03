@@ -149,7 +149,7 @@ export function AppLayout() {
           <NavLink to="/perfil" className="sidebar-link sidebar-user" title="Meu perfil">
             <UserIcon />
             <span className="sidebar-text">
-              <strong>{user.name}</strong>
+              <strong>{user.name.trim().split(/\s+/)[0]}</strong>
               <span>{roleLabels[user.role]}</span>
             </span>
           </NavLink>

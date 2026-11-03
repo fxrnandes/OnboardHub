@@ -25,7 +25,9 @@ describe('menu lateral', () => {
     for (const name of ['Painel', 'Trilhas', 'Equipe']) {
       expect(within(nav).getByRole('link', { name })).toBeInTheDocument();
     }
-    expect(screen.getByRole('link', { name: /Ana Souza/ })).toHaveTextContent('Administrador');
+    const profile = screen.getByRole('link', { name: /^Ana/ });
+    expect(profile).toHaveTextContent('AnaAdministrador');
+    expect(profile).not.toHaveTextContent('Souza');
   });
 
   it('esconde a gestão de quem é colaborador', async () => {
