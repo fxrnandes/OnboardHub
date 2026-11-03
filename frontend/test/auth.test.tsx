@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { tokenStorage } from '../src/api/client';
 import { mockFetch, session } from './support/fetch';
@@ -41,7 +41,7 @@ describe('autenticação', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Entrar' }));
 
     expect(await screen.findByRole('heading', { name: 'Olá, Ana' })).toBeInTheDocument();
-    expect(screen.getByText('Empresa Teste', { selector: 'strong' })).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getByText('Empresa Teste', { selector: 'strong' })).toBeInTheDocument();
     expect(calls[0]!.body).toEqual({ email: 'ana@empresa.com', password: 'segredo123' });
     expect(tokenStorage.get()).toBe('tok');
   });
