@@ -7803,3 +7803,137 @@ a.button.button-light:hover {
     padding-bottom: 56px;
   }
 }
+
+.source-switch {
+  margin: -4px 0 14px;
+}
+
+.media-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.media-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 26px 20px;
+  border: 1.5px dashed var(--ob-neutral-300);
+  border-radius: 14px;
+  background: var(--ob-neutral-25);
+  color: var(--ob-neutral-600);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.media-drop:hover,
+.media-drop.is-dragging {
+  border-color: var(--ob-brand-400);
+  background: var(--ob-brand-50);
+}
+
+.media-picker:has(input:focus-visible) .media-drop {
+  outline: 2px solid var(--ob-brand-600);
+  outline-offset: 2px;
+}
+
+.media-picker:has(input[aria-invalid='true']) .media-drop {
+  border-color: var(--ob-danger);
+}
+
+.media-drop strong {
+  color: var(--ob-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.media-drop > span:last-child {
+  font-size: 13px;
+}
+
+.media-drop-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 8px;
+  border-radius: 12px;
+  background: var(--ob-brand-50);
+  color: var(--ob-brand-600);
+}
+
+.media-drop-icon .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.media-selected,
+.media-uploading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--ob-neutral-200);
+  border-radius: 14px;
+  background: var(--ob-white);
+}
+
+.media-thumb {
+  flex: none;
+  width: 64px;
+  height: 48px;
+  border-radius: 9px;
+  background: var(--ob-neutral-100);
+  object-fit: cover;
+}
+
+.media-thumb.is-icon {
+  display: grid;
+  place-items: center;
+  background: var(--ob-brand-50);
+  color: var(--ob-brand-600);
+}
+
+.media-thumb .icon {
+  width: 22px;
+  height: 22px;
+}
+
+.media-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.media-info strong {
+  overflow: hidden;
+  color: var(--ob-ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.media-info > span {
+  color: var(--ob-neutral-500);
+  font-size: 12px;
+}
+
+.media-info .progress {
+  height: 6px;
+}
+
+.media-replace {
+  cursor: pointer;
+}
+
+.media-error {
+  position: static;
+  color: var(--ob-danger);
+  font-size: 13px;
+}

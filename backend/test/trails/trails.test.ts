@@ -111,7 +111,7 @@ describe('trilhas com módulos e passos (H04)', () => {
     expect((await add({ kind: 'text' })).body.error.message).toBe('Passo de texto precisa de conteúdo.');
     expect((await add({ kind: 'text', body: '   ' })).status).toBe(400);
     expect((await add({ kind: 'link' })).body.error.message).toBe('Passo de link precisa de uma URL.');
-    expect((await add({ kind: 'video' })).body.error.message).toBe('Passo de vídeo precisa da URL do vídeo.');
+    expect((await add({ kind: 'video' })).body.error.message).toBe('Passo de vídeo precisa de um arquivo enviado ou da URL do vídeo.');
     expect((await add({ kind: 'image', url: 'javascript:alert(1)' })).status).toBe(400);
     expect((await add({ kind: 'image', url: 'https://exemplo.com/foto.png' })).status).toBe(201);
   });

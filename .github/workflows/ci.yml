@@ -176,11 +176,13 @@ jobs:
           SMTP_USER: ${{ vars.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           MAIL_FROM: ${{ vars.MAIL_FROM }}
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+          AZURE_STORAGE_CONTAINER: ${{ vars.AZURE_STORAGE_CONTAINER }}
         with:
           host: ${{ secrets.AZURE_VM_HOST }}
           username: ${{ secrets.AZURE_VM_USER }}
           key: ${{ secrets.AZURE_VM_SSH_KEY }}
-          envs: GHCR_USER,GHCR_TOKEN,API_IMAGE,WEB_IMAGE,API_DOMAIN,APP_URL,POSTGRES_PASSWORD,JWT_SECRET,NEW_RELIC_LICENSE_KEY,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,MAIL_FROM
+          envs: GHCR_USER,GHCR_TOKEN,API_IMAGE,WEB_IMAGE,API_DOMAIN,APP_URL,POSTGRES_PASSWORD,JWT_SECRET,NEW_RELIC_LICENSE_KEY,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,MAIL_FROM,AZURE_STORAGE_CONNECTION_STRING,AZURE_STORAGE_CONTAINER
           script: |
             set -e
             cd /opt/onboardhub
@@ -199,6 +201,8 @@ jobs:
             SMTP_USER=$SMTP_USER
             SMTP_PASS=$SMTP_PASS
             MAIL_FROM=$MAIL_FROM
+            AZURE_STORAGE_CONNECTION_STRING=$AZURE_STORAGE_CONNECTION_STRING
+            AZURE_STORAGE_CONTAINER=${AZURE_STORAGE_CONTAINER:-media}
             ENV
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             docker compose -f docker-compose.prod.yml pull

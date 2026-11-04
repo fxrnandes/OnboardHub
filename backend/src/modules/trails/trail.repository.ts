@@ -29,6 +29,7 @@ interface StepRow {
   kind: Step['kind'];
   body: string | null;
   url: string | null;
+  media_id: string | null;
   position: number;
 }
 
@@ -52,6 +53,7 @@ const toStep = (row: StepRow): Step => ({
   kind: row.kind,
   body: row.body,
   url: row.url,
+  mediaId: row.media_id,
   position: row.position,
 });
 
@@ -91,7 +93,7 @@ export class TrailRepository {
       [id],
     );
     const steps = await this.db.query<StepRow>(
-      `select id, trail_id, module_id, title, kind, body, url, position
+      `select id, trail_id, module_id, title, kind, body, url, media_id, position
        from trail_steps where trail_id = $1 order by position`,
       [id],
     );
@@ -185,8 +187,8 @@ export class TrailRepository {
          insert into trail_modules (id, company_id, trail_id, title, position)
          select new_id, $1, $3, title, position from modules
        )
-       insert into trail_steps (company_id, trail_id, module_id, title, kind, body, url, position)
-       select $1, $3, modules.new_id, s.title, s.kind, s.body, s.url, s.position
+       insert into trail_steps (company_id, trail_id, module_id, title, kind, body, url, media_id, position)
+       select $1, $3, modules.new_id, s.title, s.kind, s.body, s.url, s.media_id, s.position
        from trail_steps s join modules on modules.old_id = s.module_id`,
       [companyId, id, copyId],
     );
@@ -253,11 +255,20 @@ export class TrailRepository {
 
   async findStep(companyId: string, id: string): Promise<StepRow | null> {
     const { rows } = await this.db.query<StepRow>(
-      `select id, trail_id, module_id, title, kind, body, url, position
+      `select id, trail_id, module_id, title, kind, body, url, media_id, position
        from trail_steps where company_id = $1 and id = $2`,
       [companyId, id],
     );
     return rows[0] ?? null;
+  }
+
+  async mediaIdsIn(companyId: string, scope: 'trail' | 'module', id: string): Promise<string[]> {
+    const column = scope === 'trail' ? 'trail_id' : 'module_id';
+    const { rows } = await this.db.query<{ media_id: string }>(
+      `select distinct media_id from trail_steps where company_id = $1 and ${column} = $2 and media_id is not null`,
+      [companyId, id],
+    );
+    return rows.map((row) => row.media_id);
   }
 
   async stepIds(moduleId: string): Promise<string[]> {
@@ -267,21 +278,21 @@ export class TrailRepository {
 
   async createStep(companyId: string, trailId: string, moduleId: string, title: string, content: StepContent): Promise<Step> {
     const { rows } = await this.db.query<StepRow>(
-      `insert into trail_steps (company_id, trail_id, module_id, title, kind, body, url, position)
-       values ($1, $2, $3, $4, $5, $6, $7,
+      `insert into trail_steps (company_id, trail_id, module_id, title, kind, body, url, media_id, position)
+       values ($1, $2, $3, $4, $5, $6, $7, $8,
                (select coalesce(max(position) + 1, 0) from trail_steps where module_id = $3))
-       returning id, trail_id, module_id, title, kind, body, url, position`,
-      [companyId, trailId, moduleId, title, content.kind, content.body, content.url],
+       returning id, trail_id, module_id, title, kind, body, url, media_id, position`,
+      [companyId, trailId, moduleId, title, content.kind, content.body, content.url, content.mediaId],
     );
     return toStep(rows[0]!);
   }
 
   async updateStep(id: string, title: string, content: StepContent): Promise<Step> {
     const { rows } = await this.db.query<StepRow>(
-      `update trail_steps set title = $2, kind = $3, body = $4, url = $5, updated_at = now()
+      `update trail_steps set title = $2, kind = $3, body = $4, url = $5, media_id = $6, updated_at = now()
        where id = $1
-       returning id, trail_id, module_id, title, kind, body, url, position`,
-      [id, title, content.kind, content.body, content.url],
+       returning id, trail_id, module_id, title, kind, body, url, media_id, position`,
+      [id, title, content.kind, content.body, content.url, content.mediaId],
     );
     return toStep(rows[0]!);
   }

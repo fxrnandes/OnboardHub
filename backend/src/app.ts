@@ -1,3 +1,5 @@
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import express, { type Express } from 'express';
 import type pg from 'pg';
 import { requireAuth } from './http/auth.middleware.js';
@@ -10,6 +12,9 @@ import { inviteRoutes } from './modules/invites/invite.routes.js';
 import { InviteService } from './modules/invites/invite.service.js';
 import { LogMailer, type Mailer } from './modules/mail/mailer.js';
 import { learningRoutes } from './modules/learning/learning.routes.js';
+import { mediaRoutes } from './modules/media/media.routes.js';
+import { MediaService, type MediaLimits } from './modules/media/media.service.js';
+import { LocalDiskStorage, type MediaStorage } from './modules/media/storage.js';
 import { LearningService } from './modules/learning/learning.service.js';
 import { jobRoleRoutes } from './modules/job-roles/job-role.routes.js';
 import { memberRoutes } from './modules/members/member.routes.js';
@@ -23,12 +28,23 @@ export interface AppDependencies {
   jwtSecret: string;
   appUrl: string;
   mailer?: Mailer;
+  storage?: MediaStorage;
+  mediaLimits?: MediaLimits;
 }
 
-export function createApp({ pool, jwtSecret, appUrl, mailer = new LogMailer() }: AppDependencies): Express {
+export function createApp({
+  pool,
+  jwtSecret,
+  appUrl,
+  mailer = new LogMailer(),
+  storage = new LocalDiskStorage(join(tmpdir(), 'onboardhub-media'), jwtSecret, '/api'),
+  mediaLimits,
+}: AppDependencies): Express {
   const app = express();
   const tokens = new TokenService(jwtSecret);
   const authenticated = requireAuth(tokens, pool);
+
+  const media = new MediaService(pool, storage, mediaLimits);
 
   app.use(express.json());
 
@@ -39,8 +55,9 @@ export function createApp({ pool, jwtSecret, appUrl, mailer = new LogMailer() }:
   app.use('/members', memberRoutes(pool, authenticated));
   app.use('/invites', inviteRoutes(pool, new InviteService(pool, tokens, appUrl), authenticated));
   app.use('/reports', reportRoutes(pool, authenticated));
-  app.use('/my', learningRoutes(new LearningService(pool), authenticated));
-  app.use(trailRoutes(new TrailService(pool), authenticated));
+  app.use('/media', mediaRoutes(media, storage, authenticated));
+  app.use('/my', learningRoutes(new LearningService(pool, media), authenticated));
+  app.use(trailRoutes(new TrailService(pool, media), authenticated));
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'not_found', message: 'Rota não encontrada.' } });

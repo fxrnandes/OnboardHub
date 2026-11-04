@@ -17,6 +17,7 @@ function hostOf(url: string) {
 }
 
 export function stepDetail(step: Step) {
+  if (step.media) return `Arquivo enviado: ${step.media.name}`;
   if (step.kind !== 'text' && step.url) return hostOf(step.url);
   const text = (step.body ?? '').replace(/\s+/g, ' ').trim();
   return text.length > 110 ? `${text.slice(0, 110)}…` : text;

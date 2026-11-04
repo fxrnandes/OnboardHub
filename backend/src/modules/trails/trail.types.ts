@@ -1,3 +1,5 @@
+import type { StepMedia } from '../media/media.types.js';
+
 export type TrailStatus = 'draft' | 'published';
 export type StepKind = 'text' | 'link' | 'video' | 'image';
 
@@ -21,6 +23,8 @@ export interface Step {
   kind: StepKind;
   body: string | null;
   url: string | null;
+  mediaId: string | null;
+  media?: StepMedia | null;
   position: number;
 }
 
@@ -39,4 +43,5 @@ export interface StepContent {
   kind: StepKind;
   body: string | null;
   url: string | null;
+  mediaId: string | null;
 }

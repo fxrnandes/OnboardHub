@@ -21,9 +21,16 @@ const updateTrailSchema = z
 const jobRolesSchema = z.object({ jobRoleIds: z.array(z.uuid('Cargo inválido.')).max(100) });
 const moduleSchema = z.object({ title });
 const orderSchema = (field: 'moduleIds' | 'stepIds') => z.object({ [field]: z.array(z.uuid('Id inválido.')) });
-const createStepSchema = z.object({ title, kind, body: body.nullish(), url: url.nullish() });
+const mediaId = z.uuid('Arquivo de mídia inválido.');
+const createStepSchema = z.object({ title, kind, body: body.nullish(), url: url.nullish(), mediaId: mediaId.nullish() });
 const updateStepSchema = z
-  .object({ title: title.optional(), kind: kind.optional(), body: body.nullish(), url: url.nullish() })
+  .object({
+    title: title.optional(),
+    kind: kind.optional(),
+    body: body.nullish(),
+    url: url.nullish(),
+    mediaId: mediaId.nullish(),
+  })
   .refine((changes) => Object.values(changes).some((value) => value !== undefined), 'Nada para alterar.');
 
 export function trailRoutes(service: TrailService, requireAuth: RequestHandler): Router {

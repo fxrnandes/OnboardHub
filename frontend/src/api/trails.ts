@@ -1,3 +1,4 @@
+import type { StepMedia } from './media';
 import { api } from './client';
 
 export type TrailStatus = 'draft' | 'published';
@@ -23,6 +24,8 @@ export interface Step {
   kind: StepKind;
   body: string | null;
   url: string | null;
+  mediaId?: string | null;
+  media?: StepMedia | null;
   position: number;
 }
 
@@ -42,6 +45,7 @@ export interface StepInput {
   kind: StepKind;
   body?: string | null;
   url?: string | null;
+  mediaId?: string | null;
 }
 
 export const trailsApi = {

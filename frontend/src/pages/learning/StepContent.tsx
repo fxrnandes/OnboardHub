@@ -46,7 +46,9 @@ export function StepContent({ step }: { step: LearnerStep }) {
   return (
     <div className="step-content">
       {step.kind === 'video' ? (
-        videoEmbedUrl(url) ? (
+        step.media ? (
+          <video className="video-file" src={step.media.url} controls preload="metadata" aria-label={step.title} />
+        ) : videoEmbedUrl(url) ? (
           <div className="video-frame">
             <iframe
               src={videoEmbedUrl(url)!}
@@ -64,7 +66,7 @@ export function StepContent({ step }: { step: LearnerStep }) {
 
       {step.kind === 'image' ? (
         <figure className="step-figure">
-          <img className="step-image" src={url} alt={step.title} />
+          <img className="step-image" src={step.media?.url ?? url} alt={step.title} />
         </figure>
       ) : null}
 

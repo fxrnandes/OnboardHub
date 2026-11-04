@@ -276,6 +276,7 @@ describe('editor de trilha', () => {
     await userEvent.type(screen.getByLabelText('Título do passo'), 'Vídeo do CEO');
     await userEvent.click(screen.getByRole('radio', { name: 'Vídeo' }));
     expect(screen.getByLabelText('Explicação (opcional)')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Usar link' }));
     await userEvent.type(screen.getByLabelText('URL'), 'https://youtu.be/abc');
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar passo' }));
     expect(await screen.findByText('Vídeo do CEO')).toBeInTheDocument();
@@ -284,6 +285,7 @@ describe('editor de trilha', () => {
       kind: 'video',
       body: null,
       url: 'https://youtu.be/abc',
+      mediaId: null,
     });
 
     await userEvent.click(screen.getByRole('button', { name: 'Descer passo Leia o manual' }));

@@ -1,5 +1,6 @@
 import type pg from 'pg';
 import { AppError } from '../../http/errors.js';
+import type { MediaService } from '../media/media.service.js';
 import { TrailRepository } from '../trails/trail.repository.js';
 import type { TrailModule, TrailTree } from '../trails/trail.types.js';
 import { LearningRepository, type Learner, type MyTrail, type Progress } from './learning.repository.js';
@@ -16,7 +17,10 @@ export class LearningService {
   private readonly learning: LearningRepository;
   private readonly trails: TrailRepository;
 
-  constructor(pool: pg.Pool) {
+  constructor(
+    pool: pg.Pool,
+    private readonly media?: MediaService,
+  ) {
     this.learning = new LearningRepository(pool);
     this.trails = new TrailRepository(pool);
   }
@@ -33,6 +37,12 @@ export class LearningService {
       learner.companyId,
       trailId,
     ))!;
+    const found = this.media
+      ? await this.media.describe(
+          learner.companyId,
+          modules.flatMap((module) => module.steps.map((step) => step.mediaId)),
+        )
+      : new Map();
     const done = await this.learning.completedAt(learner.userId, trailId);
     const progress = await this.learning.progress(learner.userId, trailId);
 
@@ -41,7 +51,11 @@ export class LearningService {
         ...trail,
         modules: modules.map((module) => ({
           ...module,
-          steps: module.steps.map((step) => ({ ...step, completedAt: done.get(step.id) ?? null })),
+          steps: module.steps.map((step) => ({
+            ...step,
+            media: step.mediaId ? (found.get(step.mediaId) ?? null) : null,
+            completedAt: done.get(step.id) ?? null,
+          })),
         })),
       },
       progress,

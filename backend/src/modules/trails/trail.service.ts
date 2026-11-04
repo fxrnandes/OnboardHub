@@ -1,6 +1,7 @@
 import type pg from 'pg';
 import { withTransaction } from '../../db/transaction.js';
 import { AppError } from '../../http/errors.js';
+import type { MediaService } from '../media/media.service.js';
 import { TrailRepository } from './trail.repository.js';
 import type { Step, StepContent, StepKind, TrailModule, TrailSummary, TrailTree } from './trail.types.js';
 
@@ -9,6 +10,7 @@ export interface StepInput {
   kind: StepKind;
   body?: string | null;
   url?: string | null;
+  mediaId?: string | null;
 }
 
 export interface StepChanges {
@@ -16,30 +18,40 @@ export interface StepChanges {
   kind?: StepKind;
   body?: string | null;
   url?: string | null;
+  mediaId?: string | null;
 }
 
 const trailNotFound = () => new AppError(404, 'not_found', 'Trilha não encontrada.');
 const moduleNotFound = () => new AppError(404, 'not_found', 'Módulo não encontrado.');
 const stepNotFound = () => new AppError(404, 'not_found', 'Passo não encontrado.');
 
-export function normalizeContent(kind: StepKind, body?: string | null, url?: string | null): StepContent {
+export function normalizeContent(
+  kind: StepKind,
+  body?: string | null,
+  url?: string | null,
+  mediaId?: string | null,
+): StepContent {
   const cleanBody = body?.trim() ? body : null;
   const cleanUrl = url?.trim() || null;
 
   if (kind === 'text') {
     if (!cleanBody) throw new AppError(400, 'step_content', 'Passo de texto precisa de conteúdo.');
-    return { kind, body: cleanBody, url: null };
+    return { kind, body: cleanBody, url: null, mediaId: null };
+  }
+
+  if (kind !== 'link' && mediaId) {
+    return { kind, body: cleanBody, url: null, mediaId };
   }
 
   if (!cleanUrl) {
     const messages = {
       link: 'Passo de link precisa de uma URL.',
-      video: 'Passo de vídeo precisa da URL do vídeo.',
-      image: 'Passo de imagem precisa da URL da imagem.',
+      video: 'Passo de vídeo precisa de um arquivo enviado ou da URL do vídeo.',
+      image: 'Passo de imagem precisa de um arquivo enviado ou da URL da imagem.',
     };
     throw new AppError(400, 'step_content', messages[kind]);
   }
-  return { kind, body: cleanBody, url: cleanUrl };
+  return { kind, body: cleanBody, url: cleanUrl, mediaId: null };
 }
 
 function ensureSameSet(current: string[], requested: string[], what: string) {
@@ -53,8 +65,30 @@ function ensureSameSet(current: string[], requested: string[], what: string) {
 export class TrailService {
   private readonly trails: TrailRepository;
 
-  constructor(private readonly pool: pg.Pool) {
+  constructor(
+    private readonly pool: pg.Pool,
+    private readonly media?: MediaService,
+  ) {
     this.trails = new TrailRepository(pool);
+  }
+
+  private async withMedia<T extends Step>(companyId: string, steps: T[]): Promise<T[]> {
+    if (!this.media) return steps.map((step) => ({ ...step, media: null }));
+    const found = await this.media.describe(
+      companyId,
+      steps.map((step) => step.mediaId),
+    );
+    return steps.map((step) => ({ ...step, media: step.mediaId ? (found.get(step.mediaId) ?? null) : null }));
+  }
+
+  private async checkMedia(companyId: string, content: StepContent): Promise<void> {
+    if (!content.mediaId) return;
+    if (!this.media) throw new AppError(400, 'step_content', 'Upload de mídia indisponível.');
+    await this.media.ensureUsable(companyId, content.mediaId, content.kind as 'image' | 'video');
+  }
+
+  private async release(companyId: string, ids: (string | null)[]): Promise<void> {
+    if (this.media) await this.media.release(companyId, ids);
   }
 
   list(companyId: string): Promise<TrailSummary[]> {
@@ -64,7 +98,19 @@ export class TrailService {
   async get(companyId: string, id: string): Promise<TrailTree> {
     const trail = await this.trails.findTree(companyId, id);
     if (!trail) throw trailNotFound();
-    return trail;
+    return this.withTreeMedia(companyId, trail);
+  }
+
+  async withTreeMedia<T extends TrailTree>(companyId: string, trail: T): Promise<T> {
+    const steps = await this.withMedia(
+      companyId,
+      trail.modules.flatMap((module) => module.steps),
+    );
+    const byId = new Map(steps.map((step) => [step.id, step]));
+    return {
+      ...trail,
+      modules: trail.modules.map((module) => ({ ...module, steps: module.steps.map((step) => byId.get(step.id)!) })),
+    };
   }
 
   async create(companyId: string, userId: string, title: string, description: string): Promise<TrailTree> {
@@ -78,7 +124,9 @@ export class TrailService {
   }
 
   async delete(companyId: string, id: string): Promise<void> {
+    const mediaIds = await this.trails.mediaIdsIn(companyId, 'trail', id);
     if (!(await this.trails.delete(companyId, id))) throw trailNotFound();
+    await this.release(companyId, mediaIds);
   }
 
   async duplicate(companyId: string, id: string, userId: string): Promise<TrailTree> {
@@ -138,11 +186,13 @@ export class TrailService {
   async deleteModule(companyId: string, id: string): Promise<void> {
     const module = await this.trails.findModule(companyId, id);
     if (!module) throw moduleNotFound();
+    const mediaIds = await this.trails.mediaIdsIn(companyId, 'module', id);
     await this.inTrail(companyId, module.trail_id, async (trails) => {
       await trails.deleteModule(id);
       await trails.compactModules(module.trail_id);
       await trails.touch(module.trail_id);
     });
+    await this.release(companyId, mediaIds);
   }
 
   async reorderModules(companyId: string, trailId: string, moduleIds: string[]): Promise<void> {
@@ -156,25 +206,31 @@ export class TrailService {
   async addStep(companyId: string, moduleId: string, input: StepInput): Promise<Step> {
     const module = await this.trails.findModule(companyId, moduleId);
     if (!module) throw moduleNotFound();
-    const content = normalizeContent(input.kind, input.body, input.url);
-    return this.inTrail(companyId, module.trail_id, async (trails) => {
-      const step = await trails.createStep(companyId, module.trail_id, moduleId, input.title, content);
+    const content = normalizeContent(input.kind, input.body, input.url, input.mediaId);
+    await this.checkMedia(companyId, content);
+    const step = await this.inTrail(companyId, module.trail_id, async (trails) => {
+      const created = await trails.createStep(companyId, module.trail_id, moduleId, input.title, content);
       await trails.touch(module.trail_id);
-      return step;
+      return created;
     });
+    return (await this.withMedia(companyId, [step]))[0]!;
   }
 
   async updateStep(companyId: string, id: string, changes: StepChanges): Promise<Step> {
     const current = await this.trails.findStep(companyId, id);
     if (!current) throw stepNotFound();
+    const switchedToUrl = changes.url != null && changes.mediaId === undefined;
     const content = normalizeContent(
       changes.kind ?? current.kind,
       changes.body === undefined ? current.body : changes.body,
       changes.url === undefined ? current.url : changes.url,
+      switchedToUrl ? null : changes.mediaId === undefined ? current.media_id : changes.mediaId,
     );
+    await this.checkMedia(companyId, content);
     const step = await this.trails.updateStep(id, changes.title ?? current.title, content);
     await this.trails.touch(current.trail_id);
-    return step;
+    if (current.media_id && current.media_id !== content.mediaId) await this.release(companyId, [current.media_id]);
+    return (await this.withMedia(companyId, [step]))[0]!;
   }
 
   async deleteStep(companyId: string, id: string): Promise<void> {
@@ -185,6 +241,7 @@ export class TrailService {
       await trails.compactSteps(step.module_id);
       await trails.touch(step.trail_id);
     });
+    await this.release(companyId, [step.media_id]);
   }
 
   async reorderSteps(companyId: string, moduleId: string, stepIds: string[]): Promise<void> {

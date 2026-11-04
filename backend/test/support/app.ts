@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
-import { createApp } from '../../src/app.js';
+import { createApp, type AppDependencies } from '../../src/app.js';
 import type { MailMessage, Mailer } from '../../src/modules/mail/mailer.js';
 import { createTestPool } from './db.js';
 
@@ -23,10 +23,10 @@ export class MemoryMailer implements Mailer {
   }
 }
 
-export function createTestApp() {
+export function createTestApp(options: Pick<AppDependencies, 'storage' | 'mediaLimits'> = {}) {
   const pool = createTestPool();
   const mailer = new MemoryMailer();
-  const app = createApp({ pool, jwtSecret: TEST_JWT_SECRET, appUrl: 'http://app.teste', mailer });
+  const app = createApp({ pool, jwtSecret: TEST_JWT_SECRET, appUrl: 'http://app.teste', mailer, ...options });
   return { app, pool, mailer };
 }
 

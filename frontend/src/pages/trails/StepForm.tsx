@@ -1,14 +1,17 @@
 import { useId, useState } from 'react';
+import { ApiError } from '../../api/client';
+import type { StepMedia } from '../../api/media';
 import { stepKindLabels, type Step, type StepInput, type StepKind } from '../../api/trails';
 import { Field } from '../../components/Field';
 import { FormAlert } from '../../components/FormAlert';
 import { TextAreaField } from '../../components/TextAreaField';
 import { useSubmit } from '../../components/useSubmit';
+import { MediaPicker } from './MediaPicker';
 import { KindIcon } from './stepKinds';
 
 const urlHints: Record<Exclude<StepKind, 'text'>, string> = {
   link: 'Página, documento ou sistema que a pessoa deve acessar.',
-  video: 'Link do YouTube, Vimeo ou do arquivo de vídeo.',
+  video: 'Link do YouTube, do Vimeo ou de um arquivo de vídeo.',
   image: 'Endereço da imagem (PNG, JPG ou GIF).',
 };
 
@@ -20,6 +23,8 @@ const kindHints: Record<StepKind, string> = {
 };
 
 const kinds: StepKind[] = ['text', 'video', 'link', 'image'];
+
+type Source = 'upload' | 'url';
 
 interface StepFormProps {
   step?: Step;
@@ -36,14 +41,25 @@ export function StepForm({ step, onSave, onCancel, compact }: StepFormProps) {
     body: step?.body ?? '',
     url: step?.url ?? '',
   });
+  const [source, setSource] = useState<Source>(step?.url ? 'url' : 'upload');
+  const [media, setMedia] = useState<StepMedia | null>(step?.media ?? null);
+  const [uploading, setUploading] = useState(false);
+  const hasMedia = form.kind === 'image' || form.kind === 'video';
+  const usesUpload = hasMedia && source === 'upload';
+  const mediaMatches = media && media.kind === form.kind ? media : null;
 
   const submit = useSubmit(async () => {
-    const isText = form.kind === 'text';
+    if (usesUpload && !mediaMatches) {
+      throw new ApiError(400, 'validation_error', 'Dados inválidos.', [
+        { field: 'media', message: form.kind === 'image' ? 'Envie uma imagem.' : 'Envie um vídeo.' },
+      ]);
+    }
     await onSave({
       title: form.title,
       kind: form.kind,
       body: form.body.trim() ? form.body : null,
-      url: isText ? null : form.url.trim() || null,
+      url: form.kind === 'text' || usesUpload ? null : form.url.trim() || null,
+      mediaId: usesUpload ? mediaMatches!.id : null,
     });
   });
 
@@ -83,7 +99,26 @@ export function StepForm({ step, onSave, onCancel, compact }: StepFormProps) {
           ))}
         </div>
       </div>
-      {form.kind !== 'text' ? (
+      {hasMedia ? (
+        <div className="segmented source-switch" role="group" aria-label="Origem do conteúdo">
+          <button type="button" aria-pressed={source === 'upload'} onClick={() => setSource('upload')}>
+            Enviar arquivo
+          </button>
+          <button type="button" aria-pressed={source === 'url'} onClick={() => setSource('url')}>
+            Usar link
+          </button>
+        </div>
+      ) : null}
+      {usesUpload ? (
+        <MediaPicker
+          kind={form.kind as 'image' | 'video'}
+          value={mediaMatches}
+          onChange={setMedia}
+          onBusyChange={setUploading}
+          error={submit.fieldError('media') ?? submit.fieldError('mediaId')}
+        />
+      ) : null}
+      {form.kind !== 'text' && !usesUpload ? (
         <Field
           label="URL"
           type="url"
@@ -106,7 +141,7 @@ export function StepForm({ step, onSave, onCancel, compact }: StepFormProps) {
         <button type="button" className="button button-secondary" onClick={onCancel}>
           Cancelar
         </button>
-        <button type="submit" className="button" disabled={submit.pending}>
+        <button type="submit" className="button" disabled={submit.pending || uploading}>
           {step ? 'Salvar passo' : 'Adicionar passo'}
         </button>
       </div>
