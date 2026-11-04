@@ -537,16 +537,44 @@ a:hover {
   flex: none;
 }
 
-.logo-mark rect {
-  fill: var(--color-primary);
+.logo-symbol,
+.logo-mark {
+  --logo-line: var(--ob-brand-600);
+  --logo-check: #fff;
 }
 
-.logo-mark path {
+.logo-mark {
+  --logo-line: #fff;
+  --logo-check: #5645d4;
+}
+
+.logo-mark rect {
+  fill: #5645d4;
+}
+
+.logo-line {
   fill: none;
-  stroke: var(--ob-on-brand);
-  stroke-width: 2.5;
+  stroke: var(--logo-line);
+  stroke-width: 2.6;
+  stroke-linecap: round;
+}
+
+.logo-goal {
+  fill: var(--logo-line);
+}
+
+.logo-check {
+  fill: none;
+  stroke: var(--logo-check);
+  stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.logo .logo-symbol {
+  width: 1.55em;
+  height: 1.55em;
+  margin-right: -0.1em;
 }
 
 .button {
