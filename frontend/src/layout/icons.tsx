@@ -276,3 +276,18 @@ export const TagIcon = () => (
     <circle cx="8" cy="8" r="1.5" />
   </Icon>
 );
+
+export const ShieldIcon = () => (
+  <Icon>
+    <path d="M12 3 5 6v5c0 4.5 3 8.2 7 10 4-1.8 7-5.5 7-10V6z" />
+    <path d="m9 12 2.2 2.2L15.5 10" />
+  </Icon>
+);
+
+export const DevicesIcon = () => (
+  <Icon>
+    <rect x="2.5" y="4" width="14" height="10" rx="2" />
+    <path d="M6 18h7" />
+    <rect x="16.5" y="9" width="5" height="11" rx="1.5" />
+  </Icon>
+);
