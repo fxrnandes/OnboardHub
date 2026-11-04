@@ -56,7 +56,7 @@ export function ProfilePage() {
         </p>
       </header>
 
-      <div className="stack">
+      <div className="profile-grid">
         <form className="card" onSubmit={saveName.onSubmit} noValidate>
           <h2>Dados pessoais</h2>
           <FormAlert message={saveName.formError} />
