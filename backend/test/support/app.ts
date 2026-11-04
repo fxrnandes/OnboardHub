@@ -55,7 +55,7 @@ export function client(app: App, token: string) {
     post: (path: string, body: object = {}) => request(app).post(path).set(auth).send(body),
     patch: (path: string, body: object) => request(app).patch(path).set(auth).send(body),
     put: (path: string, body: object) => request(app).put(path).set(auth).send(body),
-    delete: (path: string) => request(app).delete(path).set(auth),
+    delete: (path: string, body?: object) => request(app).delete(path).set(auth).send(body),
   };
 }
 

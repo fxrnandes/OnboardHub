@@ -81,4 +81,11 @@ export class MediaRepository {
     );
     return rows.map((row) => row.storage_key);
   }
+
+  async storageKeys(companyId: string): Promise<string[]> {
+    const { rows } = await this.db.query<{ storage_key: string }>('select storage_key from media where company_id = $1', [
+      companyId,
+    ]);
+    return rows.map((row) => row.storage_key);
+  }
 }

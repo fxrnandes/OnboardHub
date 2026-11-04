@@ -33,6 +33,11 @@ export interface LoginInput {
   password: string;
 }
 
+export interface AccountDeletion {
+  deletesCompany: boolean;
+  otherMembers: number;
+}
+
 export interface InvitePreview {
   companyName: string;
   email: string | null;
@@ -54,6 +59,8 @@ export const authApi = {
   updateProfile: (name: string) => api.patch<{ user: User }>('/auth/me', { name }).then((data) => data.user),
   changePassword: (currentPassword: string, newPassword: string) =>
     api.put<{ token: string }>('/auth/password', { currentPassword, newPassword }).then((data) => data.token),
+  accountDeletion: () => api.get<AccountDeletion>('/auth/account-deletion'),
+  deleteAccount: (password: string, deleteCompany: boolean) => api.delete('/auth/me', { password, deleteCompany }),
   requestPasswordReset: (email: string) => api.post<{ ok: true }>('/auth/password-resets', { email }),
   previewPasswordReset: (token: string) =>
     api.get<{ email: string }>(`/auth/password-resets/${encodeURIComponent(token)}`),

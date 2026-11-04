@@ -9,7 +9,8 @@ interface AuthContextValue {
   session: Session | null;
   startSession: (token: string) => Promise<void>;
   refresh: () => Promise<void>;
-  logout: () => void;
+  logout: (notice?: string) => void;
+  notice: string | null;
   consumeEntrance: () => boolean;
 }
 
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>(() => (tokenStorage.get() ? 'loading' : 'anonymous'));
   const entrance = useRef(false);
 
@@ -38,14 +40,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const startSession = useCallback(
     async (token: string) => {
       tokenStorage.set(token);
+      setNotice(null);
       entrance.current = true;
       await loadSession();
     },
     [loadSession],
   );
 
-  const logout = useCallback(() => {
+  const logout = useCallback((message?: string) => {
     tokenStorage.clear();
+    setNotice(message ?? null);
     setSession(null);
     setStatus('anonymous');
   }, []);
@@ -57,8 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ status, session, startSession, refresh: loadSession, logout, consumeEntrance }),
-    [status, session, startSession, loadSession, logout, consumeEntrance],
+    () => ({ status, session, startSession, refresh: loadSession, logout, notice, consumeEntrance }),
+    [status, session, startSession, loadSession, logout, notice, consumeEntrance],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

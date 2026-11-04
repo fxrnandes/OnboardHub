@@ -7,6 +7,7 @@ import { FormAlert } from '../components/FormAlert';
 import { PasswordField } from '../components/PasswordField';
 import { SocialSignIn } from '../components/SocialSignIn';
 import { useSubmit } from '../components/useSubmit';
+import { CheckIcon } from '../layout/icons';
 import { AuthLayout } from '../layout/AuthLayout';
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -14,7 +15,7 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 type Errors = Partial<Record<'email' | 'password', string>>;
 
 export function LoginPage() {
-  const { startSession } = useAuth();
+  const { startSession, notice } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState('');
@@ -66,6 +67,12 @@ export function LoginPage() {
     <AuthLayout title="Entrar">
       <SocialSignIn />
       <form ref={formRef} onSubmit={submit} noValidate>
+        {notice ? (
+          <div className="form-success" role="status">
+            <CheckIcon />
+            {notice}
+          </div>
+        ) : null}
         <FormAlert message={wrongCredentials ? null : formError} />
         <Field
           label="E-mail"

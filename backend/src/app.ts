@@ -50,7 +50,7 @@ export function createApp({
 
   app.use('/health', healthRouter);
   const resets = new PasswordResetService(pool, tokens, mailer, appUrl);
-  app.use('/auth', authRoutes(new AuthService(pool, tokens), resets, authenticated));
+  app.use('/auth', authRoutes(new AuthService(pool, tokens, media), resets, authenticated));
   app.use('/job-roles', jobRoleRoutes(pool, authenticated));
   app.use('/members', memberRoutes(pool, authenticated));
   app.use('/invites', inviteRoutes(pool, new InviteService(pool, tokens, appUrl), authenticated));

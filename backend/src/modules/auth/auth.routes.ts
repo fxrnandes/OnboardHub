@@ -33,6 +33,11 @@ const passwordSchema = z.object({
   newPassword: z.string().min(8, 'A nova senha precisa ter pelo menos 8 caracteres.').max(72),
 });
 
+const deletionSchema = z.object({
+  password: z.string({ error: 'Informe a sua senha.' }).min(1, 'Informe a sua senha.'),
+  deleteCompany: z.boolean().optional(),
+});
+
 const loginSchema = z.object({
   email,
   password: z.string().min(1, 'Informe a senha.'),
@@ -61,6 +66,16 @@ export function authRoutes(auth: AuthService, resets: PasswordResetService, requ
   router.patch('/me', requireAuth, async (req, res) => {
     const { name: newName } = profileSchema.parse(req.body);
     res.json({ user: publicUser(await auth.rename(req.auth!.userId, newName)) });
+  });
+
+  router.get('/account-deletion', requireAuth, async (req, res) => {
+    res.json(await auth.accountDeletion(req.auth!.userId));
+  });
+
+  router.delete('/me', requireAuth, async (req, res) => {
+    const { password, deleteCompany } = deletionSchema.parse(req.body ?? {});
+    await auth.deleteAccount(req.auth!.userId, password, deleteCompany ?? false);
+    res.status(204).end();
   });
 
   router.put('/password', requireAuth, async (req, res) => {

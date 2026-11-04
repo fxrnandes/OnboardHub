@@ -7937,3 +7937,69 @@ a.button.button-light:hover {
   color: var(--ob-danger);
   font-size: 13px;
 }
+
+.button.button-danger-outline {
+  border: 1px solid var(--ob-danger);
+  background: transparent;
+  color: var(--ob-danger);
+  box-shadow: none;
+}
+
+.button.button-danger-outline:hover:not(:disabled) {
+  background: var(--ob-danger-soft);
+}
+
+.danger-zone h2 {
+  color: var(--ob-danger);
+}
+
+.danger-zone-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 18px 20px;
+  border: 1px solid var(--ob-neutral-200);
+  border-radius: 14px;
+}
+
+.danger-zone-row p {
+  margin: 0;
+  color: var(--ob-neutral-600);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.danger-zone-row .button {
+  flex: none;
+}
+
+.dialog-note {
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--ob-brand-50);
+  color: var(--ob-brand-800);
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.dialog-note a {
+  color: inherit;
+  font-weight: 600;
+}
+
+.dialog-field {
+  margin-top: 18px;
+}
+
+.dialog-field .field {
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .danger-zone-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

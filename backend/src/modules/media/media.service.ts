@@ -167,6 +167,14 @@ export class MediaService {
     }
   }
 
+  async keysOf(companyId: string): Promise<string[]> {
+    return this.media.storageKeys(companyId);
+  }
+
+  async discard(keys: string[]): Promise<void> {
+    await Promise.all(keys.map((key) => this.storage.delete(key).catch(() => undefined)));
+  }
+
   private async collectStale(companyId: string): Promise<void> {
     try {
       const keys = await this.media.deleteStale(companyId, 24);

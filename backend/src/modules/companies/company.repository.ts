@@ -39,4 +39,9 @@ export class CompanyRepository {
     );
     return rows[0] ? toCompany(rows[0]) : null;
   }
+
+  async delete(id: string): Promise<void> {
+    await this.db.query('delete from trails where company_id = $1', [id]);
+    await this.db.query('delete from companies where id = $1', [id]);
+  }
 }

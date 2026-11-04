@@ -149,6 +149,14 @@ export class UserRepository {
     return withoutPassword(toUser(rows[0]!));
   }
 
+  async countOthers(companyId: string, id: string): Promise<number> {
+    const { rows } = await this.db.query<{ total: number }>(
+      'select count(*)::int as total from users where company_id = $1 and id <> $2',
+      [companyId, id],
+    );
+    return rows[0]!.total;
+  }
+
   async delete(companyId: string, id: string): Promise<void> {
     await this.db.query('delete from users where company_id = $1 and id = $2', [companyId, id]);
   }

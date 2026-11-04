@@ -2,6 +2,7 @@ import type pg from 'pg';
 import { withTransaction } from '../../db/transaction.js';
 import { AppError } from '../../http/errors.js';
 import { CompanyRepository, type Company } from '../companies/company.repository.js';
+import type { MediaService } from '../media/media.service.js';
 import { UserRepository, withoutPassword, type User } from '../users/user.repository.js';
 import { hashPassword, verifyPassword } from './password.js';
 import type { TokenService } from './token.js';
@@ -12,6 +13,11 @@ export interface SignupInput {
   name: string;
   email: string;
   password: string;
+}
+
+export interface AccountDeletion {
+  deletesCompany: boolean;
+  otherMembers: number;
 }
 
 export interface LoginInput {
@@ -25,6 +31,7 @@ export class AuthService {
   constructor(
     private readonly pool: pg.Pool,
     private readonly tokens: TokenService,
+    private readonly media?: MediaService,
   ) {}
 
   async signup(input: SignupInput): Promise<{ token: string; user: User; company: Company }> {
@@ -65,10 +72,7 @@ export class AuthService {
   }
 
   async me(userId: string): Promise<{ user: User; company: Company }> {
-    const user = await new UserRepository(this.pool).findById(userId);
-    if (!user) {
-      throw new AppError(401, 'unauthorized', 'Sessão inválida ou expirada.');
-    }
+    const user = await this.currentUser(userId);
     const company = (await new CompanyRepository(this.pool).findById(user.companyId))!;
     return { user, company };
   }
@@ -88,6 +92,43 @@ export class AuthService {
     }
     const user = await users.changePassword(userId, await hashPassword(newPassword));
     return this.issueToken(user);
+  }
+
+  async accountDeletion(userId: string): Promise<AccountDeletion> {
+    const user = await this.currentUser(userId);
+    const users = new UserRepository(this.pool);
+    const deletesCompany = user.role === 'master' && (await users.countMasters(user.companyId)) <= 1;
+    return { deletesCompany, otherMembers: await users.countOthers(user.companyId, user.id) };
+  }
+
+  async deleteAccount(userId: string, password: string, deleteCompany: boolean): Promise<void> {
+    const found = await new UserRepository(this.pool).findByIdWithPassword(userId);
+    if (!found || !(await verifyPassword(password, found.passwordHash))) {
+      throw new AppError(400, 'wrong_password', 'A senha está incorreta.');
+    }
+    const { deletesCompany } = await this.accountDeletion(userId);
+    if (!deletesCompany) {
+      await new UserRepository(this.pool).delete(found.companyId, found.id);
+      return;
+    }
+    if (!deleteCompany) {
+      throw new AppError(
+        409,
+        'company_deletion_required',
+        'Você é o único master. Promova outra pessoa a master ou exclua a empresa junto com a sua conta.',
+      );
+    }
+    const keys = (await this.media?.keysOf(found.companyId)) ?? [];
+    await withTransaction(this.pool, (client) => new CompanyRepository(client).delete(found.companyId));
+    await this.media?.discard(keys);
+  }
+
+  private async currentUser(userId: string): Promise<User> {
+    const user = await new UserRepository(this.pool).findById(userId);
+    if (!user) {
+      throw new AppError(401, 'unauthorized', 'Sessão inválida ou expirada.');
+    }
+    return user;
   }
 
   private issueToken(user: User): string {

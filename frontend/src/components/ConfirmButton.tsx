@@ -22,29 +22,36 @@ export function ConfirmDialog({
   confirmLabel,
   onConfirm,
   onClose,
+  children,
+  ready = true,
+  pending = false,
+  closeOnConfirm = true,
 }: {
   title: string;
   description?: ReactNode;
   confirmLabel: string;
   onConfirm: () => void;
   onClose: () => void;
+  children?: ReactNode;
+  ready?: boolean;
+  pending?: boolean;
+  closeOnConfirm?: boolean;
 }) {
   const [checked, setChecked] = useState(false);
   const dialog = useRef<HTMLDivElement>(null);
-  const checkbox = useRef<HTMLInputElement>(null);
   const titleId = useId();
   const descriptionId = useId();
 
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
-    checkbox.current?.focus();
+    dialog.current?.querySelector<HTMLInputElement>('input')?.focus();
     return () => previous?.focus?.();
   }, []);
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === 'Escape') {
       event.stopPropagation();
-      onClose();
+      if (!pending) onClose();
       return;
     }
     if (event.key !== 'Tab' || !dialog.current) return;
@@ -61,7 +68,7 @@ export function ConfirmDialog({
   }
 
   return createPortal(
-    <div className="dialog-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+    <div className="dialog-backdrop" onMouseDown={(event) => event.target === event.currentTarget && !pending && onClose()}>
       <div
         ref={dialog}
         className="dialog"
@@ -80,20 +87,21 @@ export function ConfirmDialog({
             {description}
           </p>
         ) : null}
+        {children}
         <label className="dialog-check">
-          <input ref={checkbox} type="checkbox" checked={checked} onChange={(event) => setChecked(event.target.checked)} />
+          <input type="checkbox" checked={checked} onChange={(event) => setChecked(event.target.checked)} />
           <span>Entendo que esta ação não pode ser desfeita.</span>
         </label>
         <footer className="dialog-actions">
-          <button type="button" className="button button-secondary" onClick={onClose}>
+          <button type="button" className="button button-secondary" onClick={onClose} disabled={pending}>
             Cancelar
           </button>
           <button
             type="button"
             className="button button-danger"
-            disabled={!checked}
+            disabled={!checked || !ready || pending}
             onClick={() => {
-              onClose();
+              if (closeOnConfirm) onClose();
               onConfirm();
             }}
           >

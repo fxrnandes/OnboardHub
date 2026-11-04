@@ -6,6 +6,7 @@ import { Field } from '../components/Field';
 import { FormAlert } from '../components/FormAlert';
 import { PasswordField } from '../components/PasswordField';
 import { useSubmit } from '../components/useSubmit';
+import { DeleteAccountSection } from './DeleteAccountSection';
 import { CheckIcon, UserIcon } from '../layout/icons';
 
 const passwordErrors: Record<string, string> = {
@@ -143,6 +144,8 @@ export function ProfilePage() {
             </div>
           </form>
         </section>
+
+        <DeleteAccountSection companyName={company.name} />
       </div>
     </div>
   );
