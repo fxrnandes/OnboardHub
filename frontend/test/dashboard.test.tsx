@@ -103,6 +103,27 @@ describe('painel do gestor', () => {
     expect(screen.getByText('Ninguém encontrado')).toBeInTheDocument();
   });
 
+  it('destaca quem está parado e filtra só essas pessoas', async () => {
+    asMaster({ 'GET /reports/progress': { body: { trails, rows } } });
+    renderApp('/painel');
+
+    const attention = await screen.findByRole('region', { name: 'Precisam de atenção' });
+    expect(within(attention).getByText('Dani Rocha')).toBeInTheDocument();
+    expect(within(attention).getByText('ainda não começou')).toBeInTheDocument();
+    expect(within(attention).getByText('sem avançar há 10 dias')).toBeInTheDocument();
+    expect(within(attention).queryByText('Carla Dias')).not.toBeInTheDocument();
+
+    await userEvent.click(within(attention).getByRole('button', { name: 'Ver as 2' }));
+    expect(screen.getByLabelText('Filtrar por situação')).toHaveValue('stalled');
+    expect(screen.getAllByRole('row')).toHaveLength(3);
+  });
+
+  it('comemora quando ninguém está parado', async () => {
+    asMaster({ 'GET /reports/progress': { body: { trails, rows: [rows[0]!, rows[1]!] } } });
+    renderApp('/painel');
+    expect(await screen.findByText(/Ninguém parado há mais de 7 dias/)).toBeInTheDocument();
+  });
+
   it('exporta o CSV da trilha selecionada com o token', async () => {
     const createObjectURL = vi.fn(() => 'blob:csv');
     const revokeObjectURL = vi.fn();
