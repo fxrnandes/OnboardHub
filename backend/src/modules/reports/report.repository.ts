@@ -12,6 +12,7 @@ export interface ProgressRow {
   completedSteps: number;
   percent: number;
   completed: boolean;
+  assignedAt: Date;
   lastActivityAt: Date | null;
 }
 
@@ -32,6 +33,7 @@ interface Row {
   job_role_name: string | null;
   total_steps: number;
   completed_steps: number;
+  assigned_at: Date;
   last_activity_at: Date | null;
 }
 
@@ -44,6 +46,7 @@ export class ReportRepository {
               u.id as user_id, u.name, u.email, jr.name as job_role_name,
               (select count(*)::int from trail_steps s where s.trail_id = t.id) as total_steps,
               count(p.step_id)::int as completed_steps,
+              greatest(t.published_at, tj.created_at, u.job_role_assigned_at) as assigned_at,
               max(p.completed_at) as last_activity_at
        from trails t
        join trail_job_roles tj on tj.trail_id = t.id
@@ -51,7 +54,7 @@ export class ReportRepository {
        join job_roles jr on jr.id = u.job_role_id
        left join step_progress p on p.trail_id = t.id and p.user_id = u.id
        where t.company_id = $1 and t.status = 'published' and ($2::uuid is null or t.id = $2)
-       group by t.id, u.id, jr.name
+       group by t.id, u.id, jr.name, tj.created_at
        order by lower(t.title), lower(u.name)`,
       [companyId, trailId ?? null],
     );
@@ -66,6 +69,7 @@ export class ReportRepository {
       completedSteps: row.completed_steps,
       percent: percent(row.completed_steps, row.total_steps),
       completed: row.total_steps > 0 && row.completed_steps >= row.total_steps,
+      assignedAt: row.assigned_at,
       lastActivityAt: row.last_activity_at,
     }));
   }

@@ -11,6 +11,7 @@ export interface ProgressRow {
   completedSteps: number;
   percent: number;
   completed: boolean;
+  assignedAt: string;
   lastActivityAt: string | null;
 }
 
@@ -54,6 +55,16 @@ export interface Overview {
 }
 
 const DAY = 24 * 60 * 60 * 1000;
+export const STALL_DAYS = 7;
+
+export const idleSince = (row: ProgressRow) =>
+  row.lastActivityAt && row.lastActivityAt > row.assignedAt ? row.lastActivityAt : row.assignedAt;
+
+export const idleDays = (row: ProgressRow, now = Date.now()) =>
+  Math.floor((now - new Date(idleSince(row)).getTime()) / DAY);
+
+export const isStalled = (row: ProgressRow, now = Date.now()) =>
+  !row.completed && now - new Date(idleSince(row)).getTime() > STALL_DAYS * DAY;
 
 export function overview(trails: TrailReport[], rows: ProgressRow[], now = Date.now()): Overview {
   const assignments = rows.length;
@@ -63,9 +74,7 @@ export function overview(trails: TrailReport[], rows: ProgressRow[], now = Date.
     assignments,
     completedAssignments: rows.filter((row) => row.completed).length,
     averagePercent: assignments ? Math.round(rows.reduce((sum, row) => sum + row.percent, 0) / assignments) : 0,
-    stalled: rows.filter(
-      (row) => !row.completed && (!row.lastActivityAt || now - new Date(row.lastActivityAt).getTime() > 7 * DAY),
-    ).length,
+    stalled: rows.filter((row) => isStalled(row, now)).length,
   };
 }
 

@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { tokenStorage } from '../src/api/client';
-import { overview, relativeDate, statusOf, type ProgressRow } from '../src/api/reports';
+import { idleDays, isStalled, overview, relativeDate, statusOf, type ProgressRow } from '../src/api/reports';
 import { mockFetch, session, type Routes } from './support/fetch';
 import { renderApp } from './support/render';
 
@@ -20,6 +20,7 @@ function row(overrides: Partial<ProgressRow>): ProgressRow {
     completedSteps: 0,
     percent: 0,
     completed: false,
+    assignedAt: daysAgo(20),
     lastActivityAt: null,
     ...overrides,
   };
@@ -52,6 +53,24 @@ describe('cálculos do painel', () => {
       stalled: 2,
     });
     expect(overview([], [], NOW).averagePercent).toBe(0);
+  });
+
+  it('conta os dias parados a partir da atribuição para quem ainda não começou', () => {
+    const justAssigned = row({ assignedAt: daysAgo(2) });
+    const assignedLongAgo = row({ assignedAt: daysAgo(9) });
+    const activeAfterOldAssignment = row({ assignedAt: daysAgo(40), completedSteps: 1, lastActivityAt: daysAgo(3) });
+    const idleAfterActivity = row({ assignedAt: daysAgo(40), completedSteps: 1, lastActivityAt: daysAgo(8) });
+    const reassigned = row({ assignedAt: daysAgo(2), completedSteps: 1, lastActivityAt: daysAgo(30) });
+    const done = row({ assignedAt: daysAgo(40), completed: true, lastActivityAt: daysAgo(30) });
+
+    expect(isStalled(justAssigned, NOW)).toBe(false);
+    expect(isStalled(assignedLongAgo, NOW)).toBe(true);
+    expect(isStalled(activeAfterOldAssignment, NOW)).toBe(false);
+    expect(isStalled(idleAfterActivity, NOW)).toBe(true);
+    expect(isStalled(reassigned, NOW)).toBe(false);
+    expect(isStalled(done, NOW)).toBe(false);
+    expect(idleDays(assignedLongAgo, NOW)).toBe(9);
+    expect(idleDays(idleAfterActivity, NOW)).toBe(8);
   });
 
   it('classifica a situação e formata datas relativas', () => {
@@ -109,7 +128,7 @@ describe('painel do gestor', () => {
 
     const attention = await screen.findByRole('region', { name: 'Precisam de atenção' });
     expect(within(attention).getByText('Dani Rocha')).toBeInTheDocument();
-    expect(within(attention).getByText('ainda não começou')).toBeInTheDocument();
+    expect(within(attention).getByText('não começou em 20 dias')).toBeInTheDocument();
     expect(within(attention).getByText('sem avançar há 10 dias')).toBeInTheDocument();
     expect(within(attention).queryByText('Carla Dias')).not.toBeInTheDocument();
 
@@ -119,7 +138,8 @@ describe('painel do gestor', () => {
   });
 
   it('comemora quando ninguém está parado', async () => {
-    asMaster({ 'GET /reports/progress': { body: { trails, rows: [rows[0]!, rows[1]!] } } });
+    const newcomer = row({ userId: 'u9', name: 'Eva Nunes', email: 'eva@empresa.com', assignedAt: daysAgo(1) });
+    asMaster({ 'GET /reports/progress': { body: { trails, rows: [rows[0]!, rows[1]!, newcomer] } } });
     renderApp('/painel');
     expect(await screen.findByText(/Ninguém parado há mais de 7 dias/)).toBeInTheDocument();
   });

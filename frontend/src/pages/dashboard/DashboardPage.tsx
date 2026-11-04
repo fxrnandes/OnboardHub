@@ -1,6 +1,9 @@
 import { useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import {
+  idleDays,
+  idleSince,
+  isStalled,
   overview,
   progressStatusLabels,
   relativeDate,
@@ -18,11 +21,6 @@ import { Bone, HeaderBones, Loading, TableBones } from '../../components/Skeleto
 
 type StatusFilter = ProgressStatus | 'stalled' | 'all';
 
-const DAY = 24 * 60 * 60 * 1000;
-const STALL_DAYS = 7;
-
-const isStalled = (row: ProgressRow, now: number) =>
-  !row.completed && (!row.lastActivityAt || now - new Date(row.lastActivityAt).getTime() > STALL_DAYS * DAY);
 
 function Ring({ percent }: { percent: number }) {
   const radius = 42;
@@ -45,9 +43,8 @@ function Ring({ percent }: { percent: number }) {
 }
 
 function idleText(row: ProgressRow, now: number) {
-  if (!row.lastActivityAt) return 'ainda não começou';
-  const days = Math.floor((now - new Date(row.lastActivityAt).getTime()) / DAY);
-  return `sem avançar há ${days} dias`;
+  const days = idleDays(row, now);
+  return row.lastActivityAt ? `sem avançar há ${days} dias` : `não começou em ${days} dias`;
 }
 
 export function DashboardPage() {
@@ -65,7 +62,7 @@ export function DashboardPage() {
 
   const attention = rows
     .filter((row) => isStalled(row, now))
-    .sort((a, b) => (a.lastActivityAt ?? '').localeCompare(b.lastActivityAt ?? ''))
+    .sort((a, b) => idleSince(a).localeCompare(idleSince(b)))
     .slice(0, 5);
 
   const filtered = rows.filter((row) => {

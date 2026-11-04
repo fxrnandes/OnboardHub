@@ -153,10 +153,14 @@ export class TrailRepository {
   }
 
   async setJobRoles(companyId: string, id: string, jobRoleIds: string[]): Promise<void> {
-    await this.db.query('delete from trail_job_roles where trail_id = $1', [id]);
+    await this.db.query('delete from trail_job_roles where trail_id = $1 and not (job_role_id = any($2::uuid[]))', [
+      id,
+      jobRoleIds,
+    ]);
     await this.db.query(
       `insert into trail_job_roles (company_id, trail_id, job_role_id)
-       select $1, $2, unnest($3::uuid[])`,
+       select $1, $2, unnest($3::uuid[])
+       on conflict (trail_id, job_role_id) do nothing`,
       [companyId, id, jobRoleIds],
     );
   }

@@ -70,9 +70,9 @@ describe('início', () => {
         body: {
           trails: [{ trailId: 't1', title: 'Boas-vindas', assigned: 3, completed: 1, averagePercent: 50 }],
           rows: [
-            { trailId: 't1', trailTitle: 'Boas-vindas', userId: 'u1', name: 'A', email: 'a@x.com', jobRoleName: null, totalSteps: 4, completedSteps: 4, percent: 100, completed: true, lastActivityAt: ago(1) },
-            { trailId: 't1', trailTitle: 'Boas-vindas', userId: 'u2', name: 'B', email: 'b@x.com', jobRoleName: null, totalSteps: 4, completedSteps: 2, percent: 50, completed: false, lastActivityAt: ago(0) },
-            { trailId: 't1', trailTitle: 'Boas-vindas', userId: 'u3', name: 'C', email: 'c@x.com', jobRoleName: null, totalSteps: 4, completedSteps: 0, percent: 0, completed: false, lastActivityAt: null },
+            { trailId: 't1', trailTitle: 'Boas-vindas', userId: 'u1', name: 'A', email: 'a@x.com', jobRoleName: null, totalSteps: 4, completedSteps: 4, percent: 100, completed: true, assignedAt: ago(20), lastActivityAt: ago(1) },
+            { trailId: 't1', trailTitle: 'Boas-vindas', userId: 'u2', name: 'B', email: 'b@x.com', jobRoleName: null, totalSteps: 4, completedSteps: 2, percent: 50, completed: false, assignedAt: ago(20), lastActivityAt: ago(0) },
+            { trailId: 't1', trailTitle: 'Boas-vindas', userId: 'u3', name: 'C', email: 'c@x.com', jobRoleName: null, totalSteps: 4, completedSteps: 0, percent: 0, completed: false, assignedAt: ago(10), lastActivityAt: null },
           ],
         },
       },

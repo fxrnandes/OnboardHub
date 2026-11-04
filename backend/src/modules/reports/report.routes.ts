@@ -16,6 +16,7 @@ const CSV_HEADER = [
   'Total de passos',
   'Percentual',
   'Concluída',
+  'Atribuída em',
   'Última atividade',
 ];
 
@@ -44,6 +45,7 @@ export function reportRoutes(db: Queryable, requireAuth: RequestHandler): Router
         row.totalSteps,
         `${row.percent}%`,
         row.completed ? 'Sim' : 'Não',
+        row.assignedAt,
         row.lastActivityAt,
       ]),
     );

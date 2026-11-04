@@ -21,8 +21,22 @@ async function scenario() {
   await master.put(`/trails/${trail.id}/job-roles`, { jobRoleIds: [caixa.id] });
   await master.post(`/trails/${trail.id}/publish`);
 
-  return { master, ana, carla, beto, trail, steps };
+  return { master, ana, carla, beto, trail, steps, caixa, cozinha };
 }
+
+async function backdate(trailId: string, days: number) {
+  const when = `now() - interval '${days} days'`;
+  await pool.query(`update trails set published_at = ${when}, created_at = ${when} where id = $1`, [trailId]);
+  await pool.query(`update trail_job_roles set created_at = ${when} where trail_id = $1`, [trailId]);
+  await pool.query(
+    `update users set job_role_assigned_at = ${when}
+     where job_role_id in (select job_role_id from trail_job_roles where trail_id = $1)`,
+    [trailId],
+  );
+}
+
+const DAY = 24 * 60 * 60 * 1000;
+const ageInDays = (value: string) => Math.round((Date.now() - new Date(value).getTime()) / DAY);
 
 describe('painel de progresso do gestor (H11, RF16)', () => {
   it('lista cada pessoa do cargo com percentual e última atividade, e resume por trilha', async () => {
@@ -81,12 +95,13 @@ describe('painel de progresso do gestor (H11, RF16)', () => {
     expect(res.headers['content-disposition']).toContain('progresso-onboarding.csv');
     const lines = res.text.replace('﻿', '').trim().split('\r\n');
     expect(lines[0]).toBe(
-      'Trilha;Nome;E-mail;Cargo;Passos concluídos;Total de passos;Percentual;Concluída;Última atividade',
+      'Trilha;Nome;E-mail;Cargo;Passos concluídos;Total de passos;Percentual;Concluída;Atribuída em;Última atividade',
     );
+    const date = '\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}';
     const anaLine = lines.find((line) => line.includes(ana.email))!;
     expect(anaLine).toContain(`Onboarding do caixa;Pessoa colaborador;${ana.email};Caixa;1;3;33%;Não;`);
-    expect(anaLine).toMatch(/;\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/);
-    expect(lines.find((line) => line.includes(carla.email))).toMatch(/;Não;$/);
+    expect(anaLine).toMatch(new RegExp(`;Não;${date};${date}$`));
+    expect(lines.find((line) => line.includes(carla.email))).toMatch(new RegExp(`;Não;${date};$`));
   });
 
   it('gestor também vê o painel; colaborador não', async () => {
@@ -105,5 +120,55 @@ describe('painel de progresso do gestor (H11, RF16)', () => {
     const res = await other.master.get('/reports/progress');
     expect(res.body.rows).toEqual([]);
     expect((await other.master.get(`/reports/progress?trailId=${trail.id}`)).body.rows).toEqual([]);
+  });
+
+  it('informa quando a trilha passou a valer para cada pessoa', async () => {
+    const { master, ana, carla, trail } = await scenario();
+
+    const res = await master.get('/reports/progress');
+
+    for (const row of res.body.rows) expect(ageInDays(row.assignedAt)).toBe(0);
+    await backdate(trail.id, 30);
+    const later = await master.get('/reports/progress');
+    const byEmail = Object.fromEntries(later.body.rows.map((row: { email: string }) => [row.email, row]));
+    expect(ageInDays(byEmail[ana.email].assignedAt)).toBe(30);
+    expect(ageInDays(byEmail[carla.email].assignedAt)).toBe(30);
+  });
+
+  it('quem trocou de cargo agora conta a partir da troca', async () => {
+    const { master, ana, carla, trail, caixa, cozinha } = await scenario();
+    await backdate(trail.id, 30);
+
+    await master.patch(`/members/${ana.memberId}`, { jobRoleId: cozinha.id });
+    await master.patch(`/members/${ana.memberId}`, { jobRoleId: caixa.id });
+    await master.patch(`/members/${carla.memberId}`, { role: 'gestor' });
+
+    const res = await master.get('/reports/progress');
+    const byEmail = Object.fromEntries(res.body.rows.map((row: { email: string }) => [row.email, row]));
+    expect(ageInDays(byEmail[ana.email].assignedAt)).toBe(0);
+    expect(ageInDays(byEmail[carla.email].assignedAt)).toBe(30);
+  });
+
+  it('salvar os cargos da trilha de novo não reinicia a contagem de quem já tinha', async () => {
+    const { master, ana, beto, trail, caixa, cozinha } = await scenario();
+    await backdate(trail.id, 30);
+
+    await master.put(`/trails/${trail.id}/job-roles`, { jobRoleIds: [caixa.id, cozinha.id] });
+
+    const res = await master.get('/reports/progress');
+    const byEmail = Object.fromEntries(res.body.rows.map((row: { email: string }) => [row.email, row]));
+    expect(ageInDays(byEmail[ana.email].assignedAt)).toBe(30);
+    expect(ageInDays(byEmail[beto.email].assignedAt)).toBe(0);
+  });
+
+  it('despublicar e publicar de novo conta a partir da nova publicação', async () => {
+    const { master, ana, trail } = await scenario();
+    await backdate(trail.id, 30);
+
+    await master.post(`/trails/${trail.id}/unpublish`);
+    await master.post(`/trails/${trail.id}/publish`);
+
+    const row = (await master.get('/reports/progress')).body.rows.find((r: { email: string }) => r.email === ana.email);
+    expect(ageInDays(row.assignedAt)).toBe(0);
   });
 });
