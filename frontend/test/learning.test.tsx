@@ -118,14 +118,14 @@ describe('percorrer a trilha', () => {
     expect(screen.getByText('Passo 2 de 3')).toBeInTheDocument();
     expect(screen.getAllByText(/\(concluído\)/)).toHaveLength(1);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Concluir e avançar →' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Concluir e avançar' }));
     expect(await screen.findByRole('heading', { name: 'Sistema de chamados' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Abrir link' })).toHaveAttribute('href', 'https://help.exemplo.com');
     expect(screen.getByText('2 de 3 passos · 67%')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Concluir trilha' }));
     expect(await screen.findByText('Trilha concluída!')).toBeInTheDocument();
-    expect(screen.getByText('✓ Concluído')).toBeInTheDocument();
+    expect(screen.getByText('Concluído')).toBeInTheDocument();
     expect(calls.filter((call) => call.method === 'POST').map((call) => call.path)).toEqual([
       '/my/steps/s2/complete',
       '/my/steps/s3/complete',
@@ -143,14 +143,14 @@ describe('percorrer a trilha', () => {
     await userEvent.click(within(outline).getByRole('button', { name: /Conheça a empresa/ }));
     expect(screen.getByRole('heading', { name: 'Conheça a empresa' })).toBeInTheDocument();
     expect(screen.getByText('Nossos valores.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '← Anterior' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled();
 
     await userEvent.click(screen.getByRole('button', { name: 'Desmarcar' }));
     expect(await screen.findByText('0 de 3 passos · 0%')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Concluir e avançar →' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Concluir e avançar' })).toBeInTheDocument();
 
     await userEvent.click(within(outline).getByRole('button', { name: /Sistema de chamados/ }));
-    await userEvent.click(screen.getByRole('button', { name: '← Anterior' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Anterior' }));
     expect(screen.getByRole('heading', { name: 'Vídeo do CEO' })).toBeInTheDocument();
   });
 
@@ -158,7 +158,7 @@ describe('percorrer a trilha', () => {
     asColaborador({ 'GET /my/trails/t1': { body: { ...fakeTrail(), resumeStepId: 's1' } } });
     renderApp('/minhas-trilhas/t1');
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Próximo →' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Próximo' }));
     expect(screen.getByRole('heading', { name: 'Vídeo do CEO' })).toBeInTheDocument();
   });
 

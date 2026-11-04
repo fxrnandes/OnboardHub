@@ -6,7 +6,15 @@ import { FormAlert } from '../../components/FormAlert';
 import { ProgressBar } from '../../components/ProgressBar';
 import { useAction } from '../../components/useAction';
 import { useResource } from '../../components/useResource';
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ImageIcon, LinkIcon, PlayIcon, TextIcon, TrophyIcon } from '../../layout/icons';
 import { StepContent } from './StepContent';
+
+const kindIcons = { text: TextIcon, link: LinkIcon, video: PlayIcon, image: ImageIcon };
+
+function KindIcon({ kind }: { kind: keyof typeof kindIcons }) {
+  const Icon = kindIcons[kind];
+  return <Icon />;
+}
 
 export function TrailPlayerPage() {
   const { id = '' } = useParams();
@@ -79,22 +87,29 @@ export function TrailPlayerPage() {
     });
   }
 
+  const currentModule = trail.modules.find((module) => module.steps.some((step) => step.id === currentId));
+  const currentModuleIndex = currentModule ? trail.modules.indexOf(currentModule) : -1;
+
   return (
     <section className="player">
       <aside className="player-outline" aria-label="Conteúdo da trilha">
-        <Link to="/minhas-trilhas" className="back-link">
-          ← Minhas trilhas
+        <Link to="/minhas-trilhas" className="player-back">
+          <ArrowLeftIcon />
+          Minhas trilhas
         </Link>
         <h1 className="player-title">{trail.title}</h1>
-        <ProgressBar percent={progress.percent} label="Progresso da trilha" />
-        <p className="muted small">
-          {progress.completedSteps} de {progress.totalSteps} passos · {progress.percent}%
-        </p>
-        <nav>
+        <div className="player-progress">
+          <ProgressBar percent={progress.percent} label="Progresso da trilha" />
+          <p>
+            {progress.completedSteps} de {progress.totalSteps} passos · {progress.percent}%
+          </p>
+        </div>
+        <nav className="player-nav">
           {trail.modules.map((module, moduleIndex) => (
             <div key={module.id} className="outline-module">
               <span className="outline-module-title">
-                {moduleIndex + 1}. {module.title}
+                <span>Módulo {moduleIndex + 1}</span>
+                {module.title}
               </span>
               <ol>
                 {module.steps.map((step) => (
@@ -106,11 +121,14 @@ export function TrailPlayerPage() {
                       onClick={() => goTo(step.id)}
                     >
                       <span className={step.completedAt ? 'check done' : 'check'} aria-hidden="true">
-                        {step.completedAt ? '✓' : ''}
+                        {step.completedAt ? <CheckIcon /> : null}
                       </span>
-                      <span>
+                      <span className="outline-step-title">
                         {step.title}
                         <span className="sr-only">{step.completedAt ? ' (concluído)' : ''}</span>
+                      </span>
+                      <span className="outline-step-kind" aria-hidden="true">
+                        <KindIcon kind={step.kind} />
                       </span>
                     </button>
                   </li>
@@ -124,9 +142,16 @@ export function TrailPlayerPage() {
       <article className="player-main">
         {justFinished || (progress.completed && !current) ? (
           <div className="finish-banner" role="status">
-            <strong>Trilha concluída!</strong>
-            <span>Você completou todos os passos de "{trail.title}".</span>
-            <Link to="/minhas-trilhas">Ver minhas trilhas</Link>
+            <span className="finish-banner-icon" aria-hidden="true">
+              <TrophyIcon />
+            </span>
+            <div>
+              <strong>Trilha concluída!</strong>
+              <span>Você completou todos os passos de "{trail.title}".</span>
+            </div>
+            <Link to="/minhas-trilhas" className="button button-on-brand">
+              Ver minhas trilhas
+            </Link>
           </div>
         ) : null}
 
@@ -135,8 +160,16 @@ export function TrailPlayerPage() {
         {current ? (
           <>
             <header className="step-header">
-              <span className={`step-kind kind-${current.kind}`}>{stepKindLabels[current.kind]}</span>
-              <span className="muted small">
+              <span className={`step-kind kind-${current.kind}`}>
+                <KindIcon kind={current.kind} />
+                {stepKindLabels[current.kind]}
+              </span>
+              {currentModule ? (
+                <span className="step-module">
+                  Módulo {currentModuleIndex + 1} · {currentModule.title}
+                </span>
+              ) : null}
+              <span className="step-count">
                 Passo {index + 1} de {steps.length}
               </span>
             </header>
@@ -150,24 +183,30 @@ export function TrailPlayerPage() {
                 disabled={!previous}
                 onClick={() => previous && goTo(previous.id)}
               >
-                ← Anterior
+                <ArrowLeftIcon />
+                Anterior
               </button>
               <div className="player-footer-main">
                 {current.completedAt ? (
                   <>
-                    <span className="done-note">✓ Concluído</span>
+                    <span className="done-note">
+                      <CheckIcon />
+                      Concluído
+                    </span>
                     <button type="button" className="button-ghost" onClick={undo} disabled={action.pending}>
                       Desmarcar
                     </button>
                     {next ? (
                       <button type="button" className="button" onClick={() => goTo(next.id)}>
-                        Próximo →
+                        Próximo
+                        <ArrowRightIcon />
                       </button>
                     ) : null}
                   </>
                 ) : (
                   <button type="button" className="button" onClick={completeAndAdvance} disabled={action.pending}>
-                    {next ? 'Concluir e avançar →' : 'Concluir trilha'}
+                    {next ? 'Concluir e avançar' : 'Concluir trilha'}
+                    {next ? <ArrowRightIcon /> : <CheckIcon />}
                   </button>
                 )}
               </div>

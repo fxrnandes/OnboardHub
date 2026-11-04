@@ -104,3 +104,65 @@ export const SettingsIcon = () => (
     <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
   </Icon>
 );
+
+export const ArrowLeftIcon = () => (
+  <Icon>
+    <path d="M19 12H5" />
+    <path d="m11 6-6 6 6 6" />
+  </Icon>
+);
+
+export const CheckIcon = () => (
+  <Icon>
+    <path d="m5 12.5 4.5 4.5L19 7.5" />
+  </Icon>
+);
+
+export const PlayIcon = () => (
+  <Icon>
+    <rect x="3" y="5" width="18" height="14" rx="3" />
+    <path d="m10 9.5 4.5 2.5-4.5 2.5z" />
+  </Icon>
+);
+
+export const ImageIcon = () => (
+  <Icon>
+    <rect x="3" y="4" width="18" height="16" rx="3" />
+    <circle cx="9" cy="10" r="1.6" />
+    <path d="m4 18 5.5-5.5L13 16l3-3 4 4" />
+  </Icon>
+);
+
+export const TextIcon = () => (
+  <Icon>
+    <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+    <path d="M14 3v5h5" />
+    <path d="M9 13h6" />
+    <path d="M9 17h4" />
+  </Icon>
+);
+
+export const LinkIcon = () => (
+  <Icon>
+    <path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1" />
+    <path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1" />
+  </Icon>
+);
+
+export const ExternalIcon = () => (
+  <Icon>
+    <path d="M14 4h6v6" />
+    <path d="M20 4 11 13" />
+    <path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" />
+  </Icon>
+);
+
+export const TrophyIcon = () => (
+  <Icon>
+    <path d="M8 4h8v5a4 4 0 0 1-8 0z" />
+    <path d="M8 6H5a2 2 0 0 0 0 4h3" />
+    <path d="M16 6h3a2 2 0 0 1 0 4h-3" />
+    <path d="M12 13v4" />
+    <path d="M8 20h8" />
+  </Icon>
+);
