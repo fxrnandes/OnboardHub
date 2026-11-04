@@ -7,6 +7,7 @@ import { useAuth } from '../auth/AuthContext';
 import { ProgressBar } from '../components/ProgressBar';
 import { useResource } from '../components/useResource';
 import { ArrowRightIcon, ChartIcon, LayersIcon, RouteIcon, UsersIcon } from '../layout/icons';
+import { Bone, Loading } from '../components/Skeleton';
 
 const loadReport = () => reportsApi.progress();
 
@@ -89,7 +90,23 @@ function NextTrail({ trails }: { trails: MyTrail[] }) {
 
 function TeamSummary() {
   const report = useResource(loadReport);
-  if (!report.data) return null;
+  if (!report.data) {
+    if (!report.loading) return null;
+    return (
+      <Loading label="Carregando a visão da equipe…" className="home-team">
+        <Bone w={150} h={16} className="sk-gap-md" />
+        <div className="sk-stats is-three">
+          {[0, 1, 2].map((item) => (
+            <div key={item} className="sk-card sk-stat">
+              <Bone w="60%" h={12} />
+              <Bone w={70} h={30} r={8} />
+              <Bone w="50%" h={11} />
+            </div>
+          ))}
+        </div>
+      </Loading>
+    );
+  }
   const stats = overview(report.data.trails, report.data.rows);
   const items = [
     { label: 'Pessoas em onboarding', value: String(stats.people), hint: `${stats.trails} trilhas publicadas` },
@@ -152,7 +169,13 @@ export function HomePage() {
         </p>
       </header>
 
-      {trails.data ? <NextTrail trails={list} /> : null}
+      {trails.data ? (
+        <NextTrail trails={list} />
+      ) : trails.loading ? (
+        <Loading label="Carregando suas trilhas…">
+          <div className="sk-hero" />
+        </Loading>
+      ) : null}
 
       {manages ? <TeamSummary /> : null}
 

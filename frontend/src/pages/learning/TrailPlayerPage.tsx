@@ -9,6 +9,7 @@ import { useResource } from '../../components/useResource';
 import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, TrophyIcon } from '../../layout/icons';
 import { KindIcon } from '../trails/stepKinds';
 import { StepContent } from './StepContent';
+import { Bone, Loading } from '../../components/Skeleton';
 
 export function TrailPlayerPage() {
   const { id = '' } = useParams();
@@ -28,7 +29,37 @@ export function TrailPlayerPage() {
     window.scrollTo?.({ top: 0 });
   }, [currentId]);
 
-  if (data.loading && !data.data) return <p className="page-loading">Abrindo a trilha…</p>;
+  if (data.loading && !data.data) {
+    return (
+      <Loading label="Abrindo a trilha…" className="player">
+        <div className="sk-card sk-pad sk-outline">
+          <Bone w={110} h={11} />
+          <Bone w="80%" h={20} r={6} />
+          <Bone h={8} r={4} />
+          {[0, 1].map((group) => (
+            <div key={group} className="sk-outline-group">
+              <Bone w={70} h={10} />
+              <Bone w="60%" h={13} />
+              {[0, 1, 2, 3].map((item) => (
+                <div key={item} className="sk-outline-item">
+                  <Bone w={20} h={20} r={10} />
+                  <Bone w={`${70 - item * 8}%`} h={12} />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="sk-player-main">
+          <Bone w={240} h={12} />
+          <Bone w="55%" h={34} r={8} />
+          <Bone h={14} />
+          <Bone w="92%" h={14} />
+          <Bone w="74%" h={14} />
+          <Bone h={220} r={16} />
+        </div>
+      </Loading>
+    );
+  }
   if (!data.data) {
     return (
       <section className="page">

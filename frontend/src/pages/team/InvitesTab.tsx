@@ -9,6 +9,7 @@ import { useAction } from '../../components/useAction';
 import { useResource } from '../../components/useResource';
 import { useSubmit } from '../../components/useSubmit';
 import { CheckIcon, CopyIcon, LinkIcon, MailIcon } from '../../layout/icons';
+import { Bone, Loading, TableBones } from '../../components/Skeleton';
 
 const dateFormat = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
@@ -49,7 +50,22 @@ export function InvitesTab() {
     });
   }
 
-  if (invites.loading && !invites.data) return <p className="page-loading">Carregando convites…</p>;
+  if (invites.loading && !invites.data) {
+    return (
+      <Loading label="Carregando convites…" className="team-panel">
+        <div className="sk-card sk-pad sk-invite">
+          <Bone w={150} h={16} />
+          <div className="sk-invite-row">
+            <Bone h={44} r={11} />
+            <Bone h={44} r={11} />
+            <Bone h={44} r={11} />
+            <Bone w={200} h={44} r={12} />
+          </div>
+        </div>
+        <TableBones rows={3} />
+      </Loading>
+    );
+  }
   if (invites.error) return <FormAlert message={invites.error} />;
 
   const list = invites.data ?? [];

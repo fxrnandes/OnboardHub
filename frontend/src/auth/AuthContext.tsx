@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { authApi, type Session } from '../api/auth';
 import { tokenStorage } from '../api/client';
 
@@ -10,6 +10,7 @@ interface AuthContextValue {
   startSession: (token: string) => Promise<void>;
   refresh: () => Promise<void>;
   logout: () => void;
+  consumeEntrance: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -17,6 +18,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [status, setStatus] = useState<Status>(() => (tokenStorage.get() ? 'loading' : 'anonymous'));
+  const entrance = useRef(false);
 
   const loadSession = useCallback(async () => {
     try {
@@ -36,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const startSession = useCallback(
     async (token: string) => {
       tokenStorage.set(token);
+      entrance.current = true;
       await loadSession();
     },
     [loadSession],
@@ -47,9 +50,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('anonymous');
   }, []);
 
+  const consumeEntrance = useCallback(() => {
+    const pending = entrance.current;
+    entrance.current = false;
+    return pending;
+  }, []);
+
   const value = useMemo(
-    () => ({ status, session, startSession, refresh: loadSession, logout }),
-    [status, session, startSession, loadSession, logout],
+    () => ({ status, session, startSession, refresh: loadSession, logout, consumeEntrance }),
+    [status, session, startSession, loadSession, logout, consumeEntrance],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

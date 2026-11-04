@@ -44,6 +44,7 @@ describe('autenticação', () => {
     expect(within(screen.getByRole('main')).getByText(/Empresa Teste/)).toBeInTheDocument();
     expect(calls[0]!.body).toEqual({ email: 'ana@empresa.com', password: 'segredo123' });
     expect(tokenStorage.get()).toBe('tok');
+    expect(document.querySelector('.app-shell')).toHaveClass('is-entering');
   });
 
   it('mostra o erro de credenciais', async () => {

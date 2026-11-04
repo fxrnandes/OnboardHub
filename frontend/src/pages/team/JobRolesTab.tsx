@@ -7,6 +7,7 @@ import { useAction } from '../../components/useAction';
 import { useResource } from '../../components/useResource';
 import { useSubmit } from '../../components/useSubmit';
 import { PencilIcon, PlusIcon, TagIcon } from '../../layout/icons';
+import { Bone, Loading } from '../../components/Skeleton';
 
 const byName = (a: JobRole, b: JobRole) => a.name.localeCompare(b.name, 'pt-BR');
 
@@ -38,7 +39,29 @@ export function JobRolesTab() {
     });
   }
 
-  if (jobRoles.loading && !jobRoles.data) return <p className="page-loading">Carregando cargos…</p>;
+  if (jobRoles.loading && !jobRoles.data) {
+    return (
+      <Loading label="Carregando cargos…" className="team-split">
+        <div className="role-grid">
+          {[0, 1, 2, 3, 4].map((item) => (
+            <div key={item} className="sk-card sk-person sk-role">
+              <Bone w={40} h={40} r={11} />
+              <div className="sk-row-text">
+                <Bone w="60%" h={14} />
+                <Bone w={70} h={11} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="sk-card sk-pad">
+          <Bone w={110} h={16} />
+          <Bone w="90%" h={11} />
+          <Bone h={44} r={11} />
+          <Bone h={44} r={12} />
+        </div>
+      </Loading>
+    );
+  }
   if (jobRoles.error) return <FormAlert message={jobRoles.error} />;
 
   const list = jobRoles.data ?? [];

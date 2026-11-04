@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router';
 import { roleLabels, type Role } from '../api/auth';
 import { useAuth } from '../auth/AuthContext';
 import { ChartIcon, CloseIcon, HomeIcon, LayersIcon, LogoutIcon, MenuIcon, RouteIcon, SettingsIcon, UserIcon, UsersIcon } from './icons';
+import { prefersReducedMotion } from '../preferences/preferences';
 import { Logo, LogoMark } from './Logo';
 
 interface NavItem {
@@ -33,10 +34,13 @@ export const navSections: { title: string; items: NavItem[] }[] = [
 ];
 
 const OPEN_DELAY = 150;
+const LEAVE_DURATION = 420;
 const CLOSE_DELAY = 250;
 
 export function AppLayout() {
-  const { session, logout } = useAuth();
+  const { session, logout, consumeEntrance } = useAuth();
+  const [entering, setEntering] = useState(consumeEntrance);
+  const [leaving, setLeaving] = useState(false);
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -48,6 +52,22 @@ export function AppLayout() {
   }
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  useEffect(() => {
+    if (!entering) return;
+    const done = window.setTimeout(() => setEntering(false), 1100);
+    return () => window.clearTimeout(done);
+  }, [entering]);
+
+  function leave() {
+    if (leaving) return;
+    if (prefersReducedMotion()) {
+      logout();
+      return;
+    }
+    setLeaving(true);
+    window.setTimeout(logout, LEAVE_DURATION);
+  }
 
   function handleBlur(event: FocusEvent<HTMLElement>) {
     if (!event.currentTarget.contains(event.relatedTarget as Node | null)) schedule(false, CLOSE_DELAY);
@@ -73,7 +93,7 @@ export function AppLayout() {
     .map((section) => ({ ...section, items: section.items.filter((item) => !item.roles || item.roles.includes(user.role)) }))
     .filter((section) => section.items.length > 0);
 
-  const shellClass = ['app-shell', open && 'is-sidebar-open', drawerOpen && 'is-drawer-open'].filter(Boolean).join(' ');
+  const shellClass = ['app-shell', open && 'is-sidebar-open', drawerOpen && 'is-drawer-open', entering && 'is-entering', leaving && 'is-leaving'].filter(Boolean).join(' ');
 
   return (
     <div className={shellClass}>
@@ -140,7 +160,7 @@ export function AppLayout() {
             <SettingsIcon />
             <span className="sidebar-label">Configurações</span>
           </NavLink>
-          <button type="button" className="sidebar-link sidebar-logout" onClick={logout}>
+          <button type="button" className="sidebar-link sidebar-logout" onClick={leave}>
             <LogoutIcon />
             <span className="sidebar-label">Sair</span>
           </button>

@@ -7,6 +7,7 @@ import { FormAlert } from '../../components/FormAlert';
 import { useAction } from '../../components/useAction';
 import { useResource } from '../../components/useResource';
 import { SearchIcon, UserIcon } from '../../layout/icons';
+import { Bone, Loading, TableBones } from '../../components/Skeleton';
 
 const roles: Role[] = ['master', 'gestor', 'colaborador'];
 
@@ -21,7 +22,17 @@ export function MembersTab() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<Role | 'all'>('all');
 
-  if (members.loading && !members.data) return <p className="page-loading">Carregando pessoas…</p>;
+  if (members.loading && !members.data) {
+    return (
+      <Loading label="Carregando pessoas…" className="team-panel">
+        <div className="team-toolbar">
+          <Bone w={460} h={44} r={12} />
+          <Bone w={360} h={42} r={11} />
+        </div>
+        <TableBones />
+      </Loading>
+    );
+  }
   if (members.error) return <FormAlert message={members.error} />;
 
   const jobRoleName = (id: string | null) => jobRoles.data?.find((jobRole) => jobRole.id === id)?.name ?? 'Sem cargo';

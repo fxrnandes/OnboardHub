@@ -14,6 +14,7 @@ import { ProgressBar } from '../../components/ProgressBar';
 import { useAction } from '../../components/useAction';
 import { useResource } from '../../components/useResource';
 import { AlertIcon, ArrowRightIcon, ChartIcon, CheckIcon, ClockIcon, DownloadIcon, SearchIcon, UsersIcon } from '../../layout/icons';
+import { Bone, HeaderBones, Loading, TableBones } from '../../components/Skeleton';
 
 type StatusFilter = ProgressStatus | 'stalled' | 'all';
 
@@ -83,7 +84,48 @@ export function DashboardPage() {
     tableRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
   }
 
-  if (report.loading && !report.data) return <p className="page-loading">Carregando o painel…</p>;
+  if (report.loading && !report.data) {
+    return (
+      <Loading label="Carregando o painel…" className="dash">
+        <HeaderBones action />
+        <div className="sk-stats">
+          <div className="sk-card sk-stat is-hero" />
+          {[0, 1, 2].map((item) => (
+            <div key={item} className="sk-card sk-stat">
+              <Bone w="55%" h={12} />
+              <Bone w={70} h={32} r={8} />
+              <Bone w="70%" h={11} />
+            </div>
+          ))}
+        </div>
+        <div className="sk-split">
+          <div className="sk-card sk-pad">
+            <Bone w={120} h={16} />
+            {[0, 1, 2, 3].map((item) => (
+              <div key={item} className="sk-bar-row">
+                <Bone w="40%" h={13} />
+                <Bone h={8} r={4} />
+                <Bone w={36} h={13} />
+              </div>
+            ))}
+          </div>
+          <div className="sk-card sk-pad">
+            <Bone w={160} h={16} />
+            {[0, 1, 2].map((item) => (
+              <div key={item} className="sk-person">
+                <Bone w={32} h={32} r={9} />
+                <div className="sk-row-text">
+                  <Bone w="50%" h={13} />
+                  <Bone w="70%" h={10} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <TableBones rows={5} />
+      </Loading>
+    );
+  }
 
   return (
     <section className="dash">

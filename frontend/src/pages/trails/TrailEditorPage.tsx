@@ -11,6 +11,7 @@ import { useSubmit } from '../../components/useSubmit';
 import { AlertIcon, ArrowLeftIcon, CheckIcon, FlowIcon, ListIcon, PlusIcon } from '../../layout/icons';
 import { FlowView } from './flow/FlowView';
 import { ModuleCard } from './ModuleCard';
+import { Bone, HeaderBones, Loading } from '../../components/Skeleton';
 
 type EditorView = 'list' | 'flow';
 
@@ -69,7 +70,47 @@ export function TrailEditorPage() {
     trail.setData(await trailsApi.get(id));
   });
 
-  if (trail.loading && !trail.data) return <p className="page-loading">Carregando trilha…</p>;
+  if (trail.loading && !trail.data) {
+    return (
+      <Loading label="Carregando trilha…" className="editor">
+        <Bone w={70} h={12} />
+        <HeaderBones action />
+        <div className="editor-grid">
+          <div className="module-stack">
+            {[4, 3].map((count, moduleIndex) => (
+              <div key={moduleIndex} className="sk-card sk-module">
+                <div className="sk-person sk-module-head">
+                  <Bone w={34} h={34} r={10} />
+                  <div className="sk-row-text">
+                    <Bone w={90} h={10} />
+                    <Bone w="40%" h={15} />
+                  </div>
+                </div>
+                {Array.from({ length: count }, (_, item) => (
+                  <div key={item} className="sk-person sk-step">
+                    <Bone w={36} h={36} r={10} />
+                    <div className="sk-row-text">
+                      <Bone w={`${55 - item * 7}%`} h={13} />
+                      <Bone w="35%" h={10} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+          <div className="editor-side">
+            {[150, 190, 130].map((height, index) => (
+              <div key={index} className="sk-card sk-pad" style={{ minHeight: height }}>
+                <Bone w={110} h={15} />
+                <Bone h={40} r={10} />
+                <Bone w="70%" h={11} />
+              </div>
+            ))}
+          </div>
+        </div>
+      </Loading>
+    );
+  }
   if (!trail.data) {
     return (
       <section className="page">

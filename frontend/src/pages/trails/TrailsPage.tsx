@@ -9,6 +9,7 @@ import { useAction } from '../../components/useAction';
 import { useResource } from '../../components/useResource';
 import { useSubmit } from '../../components/useSubmit';
 import { CopyIcon, LayersIcon, PencilIcon, PlusIcon } from '../../layout/icons';
+import { Bone, Loading, RowBones } from '../../components/Skeleton';
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
 
@@ -87,7 +88,10 @@ export function TrailsPage() {
       <FormAlert message={trails.error ?? action.error} />
 
       {trails.loading && !trails.data ? (
-        <p className="page-loading">Carregando trilhas…</p>
+        <Loading label="Carregando trilhas…">
+          <Bone w={320} h={44} r={12} />
+          <RowBones rows={5} icon={44} />
+        </Loading>
       ) : all.length ? (
         <>
           <div className="segmented" role="group" aria-label="Filtrar trilhas">

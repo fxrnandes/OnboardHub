@@ -7,6 +7,7 @@ import { FormAlert } from '../../components/FormAlert';
 import { ProgressBar } from '../../components/ProgressBar';
 import { useResource } from '../../components/useResource';
 import { ArrowRightIcon, CheckIcon, RouteIcon } from '../../layout/icons';
+import { Bone, Loading, RowBones } from '../../components/Skeleton';
 
 type Status = 'todo' | 'doing' | 'done';
 type Filter = 'all' | Status;
@@ -101,7 +102,10 @@ export function MyTrailsPage() {
       <FormAlert message={trails.error} />
 
       {trails.loading && !trails.data ? (
-        <p className="page-loading">Carregando suas trilhas…</p>
+        <Loading label="Carregando suas trilhas…">
+          <Bone w={420} h={44} r={12} />
+          <RowBones rows={4} />
+        </Loading>
       ) : all.length ? (
         <>
           <div className="segmented" role="group" aria-label="Filtrar trilhas">

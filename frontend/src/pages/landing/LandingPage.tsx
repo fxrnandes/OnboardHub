@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
+import { ThemeToggle } from '../../components/ThemeToggle';
 import { Logo } from '../../layout/Logo';
 import {
   ChartIcon,
@@ -149,6 +150,7 @@ export function LandingPage() {
             <Link to="/cadastro" className="button">
               Criar conta
             </Link>
+            <ThemeToggle className="lp-theme" />
           </div>
         </div>
       </header>

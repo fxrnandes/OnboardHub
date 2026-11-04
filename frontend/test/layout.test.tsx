@@ -107,6 +107,8 @@ describe('menu lateral', () => {
     renderApp('/');
 
     await userEvent.click(await screen.findByRole('button', { name: 'Sair' }));
+    expect(document.querySelector('.app-shell')).toHaveClass('is-leaving');
+    expect(document.querySelector('.app-shell')).not.toHaveClass('is-entering');
     expect(await screen.findByRole('heading', { name: /Do primeiro dia à autonomia/ })).toBeInTheDocument();
     expect(tokenStorage.get()).toBeNull();
   });
