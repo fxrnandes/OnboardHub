@@ -262,3 +262,17 @@ export const ClockIcon = () => (
     <path d="M12 7.5V12l3 2" />
   </Icon>
 );
+
+export const MailIcon = () => (
+  <Icon>
+    <rect x="3" y="5" width="18" height="14" rx="3" />
+    <path d="m4 7.5 8 5.5 8-5.5" />
+  </Icon>
+);
+
+export const TagIcon = () => (
+  <Icon>
+    <path d="M3 12V4.5A1.5 1.5 0 0 1 4.5 3H12l9 9-9 9z" />
+    <circle cx="8" cy="8" r="1.5" />
+  </Icon>
+);

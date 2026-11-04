@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { roleLabels } from '../../api/auth';
 import { inviteStatusLabels, invitesApi, jobRolesApi, type Invite, type NewInvite } from '../../api/team';
 import { ConfirmButton } from '../../components/ConfirmButton';
-import { EmptyState } from '../../components/EmptyState';
 import { Field } from '../../components/Field';
 import { FormAlert } from '../../components/FormAlert';
 import { SelectField } from '../../components/SelectField';
 import { useAction } from '../../components/useAction';
 import { useResource } from '../../components/useResource';
 import { useSubmit } from '../../components/useSubmit';
+import { CheckIcon, CopyIcon, LinkIcon, MailIcon } from '../../layout/icons';
 
 const dateFormat = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
@@ -52,12 +52,18 @@ export function InvitesTab() {
   if (invites.loading && !invites.data) return <p className="page-loading">Carregando convites…</p>;
   if (invites.error) return <FormAlert message={invites.error} />;
 
+  const list = invites.data ?? [];
+  const pending = list.filter((invite) => invite.status === 'pending').length;
+
   return (
-    <div className="stack">
-      <form className="card" onSubmit={create.onSubmit} noValidate>
-        <h2>Convidar pessoa</h2>
+    <div className="team-panel">
+      <form className="dash-card invite-card" onSubmit={create.onSubmit} noValidate>
+        <header className="dash-card-head">
+          <h2>Convidar pessoa</h2>
+          <span>O link vale por 7 dias e pode ser usado uma vez</span>
+        </header>
         <FormAlert message={create.formError} />
-        <div className="form-grid">
+        <div className="invite-grid">
           <Field
             label="E-mail (opcional)"
             type="email"
@@ -85,19 +91,26 @@ export function InvitesTab() {
               ...(jobRoles.data ?? []).map((jobRole) => ({ value: jobRole.id, label: jobRole.name })),
             ]}
           />
+          <button type="submit" className="button invite-submit" disabled={create.pending}>
+            <LinkIcon />
+            {create.pending ? 'Gerando…' : 'Gerar link de convite'}
+          </button>
         </div>
-        <button type="submit" className="button" disabled={create.pending}>
-          {create.pending ? 'Gerando…' : 'Gerar link de convite'}
-        </button>
 
         {link ? (
           <div className="invite-link" role="status">
-            <span>Envie este link para a pessoa:</span>
-            <div className="invite-link-row">
-              <input aria-label="Link do convite" value={link} readOnly onFocus={(event) => event.target.select()} />
-              <button type="button" className="button button-secondary" onClick={copy}>
-                {copied ? 'Copiado!' : 'Copiar'}
-              </button>
+            <span className="invite-link-icon" aria-hidden="true">
+              <CheckIcon />
+            </span>
+            <div className="invite-link-body">
+              <strong>Convite criado. Envie este link para a pessoa:</strong>
+              <div className="invite-link-row">
+                <input aria-label="Link do convite" value={link} readOnly onFocus={(event) => event.target.select()} />
+                <button type="button" className="button button-secondary button-sm" onClick={copy}>
+                  <CopyIcon />
+                  {copied ? 'Copiado!' : 'Copiar'}
+                </button>
+              </div>
             </div>
           </div>
         ) : null}
@@ -105,49 +118,72 @@ export function InvitesTab() {
 
       <FormAlert message={action.error} />
 
-      {invites.data?.length ? (
-        <div className="table-wrap">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Convidado</th>
-                <th>Papel</th>
-                <th>Status</th>
-                <th>Expira em</th>
-                <th aria-label="Ações" />
-              </tr>
-            </thead>
-            <tbody>
-              {invites.data.map((invite) => (
-                <tr key={invite.id}>
-                  <td>
-                    {invite.email ?? <span className="muted">Link aberto</span>}
-                    {invite.jobRoleName ? <div className="muted small">{invite.jobRoleName}</div> : null}
-                  </td>
-                  <td>{roleLabels[invite.role]}</td>
-                  <td>
-                    <span className={`badge status-${invite.status}`}>{inviteStatusLabels[invite.status]}</span>
-                  </td>
-                  <td>{dateFormat.format(new Date(invite.expiresAt))}</td>
-                  <td className="cell-actions">
-                    {invite.status === 'pending' ? (
-                      <ConfirmButton
-                        label="Revogar"
-                        confirmLabel="Revogar convite"
-                        title="Revogar este convite?"
-                        description="O link deixa de funcionar na hora. Se precisar, você pode gerar um convite novo depois."
-                        disabled={action.pending}
-                        onConfirm={() => revoke(invite)}
-                      />
-                    ) : null}
-                  </td>
+      {list.length ? (
+        <section className="dash-card team-card" aria-labelledby="convites-title">
+          <header className="dash-card-head">
+            <h2 id="convites-title">Convites enviados</h2>
+            <span>{pending === 1 ? '1 pendente' : `${pending} pendentes`}</span>
+          </header>
+          <div className="table-wrap">
+            <table className="dash-table">
+              <thead>
+                <tr>
+                  <th>Convidado</th>
+                  <th>Papel</th>
+                  <th>Status</th>
+                  <th>Expira em</th>
+                  <th aria-label="Ações" />
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {list.map((invite) => (
+                  <tr key={invite.id}>
+                    <td>
+                      <div className="person">
+                        <span className="person-icon" aria-hidden="true">
+                          {invite.email ? <MailIcon /> : <LinkIcon />}
+                        </span>
+                        <span className="person-text">
+                          <strong>{invite.email ?? 'Link aberto'}</strong>
+                          <span className="dash-sub">{invite.jobRoleName ?? 'Sem cargo'}</span>
+                        </span>
+                      </div>
+                    </td>
+                    <td>{roleLabels[invite.role]}</td>
+                    <td>
+                      <span className={`badge status-${invite.status}`}>{inviteStatusLabels[invite.status]}</span>
+                    </td>
+                    <td className="team-date">{dateFormat.format(new Date(invite.expiresAt))}</td>
+                    <td className="team-actions">
+                      {invite.status === 'pending' ? (
+                        <ConfirmButton
+                          className="button-ghost danger"
+                          label="Revogar"
+                          confirmLabel="Revogar convite"
+                          title="Revogar este convite?"
+                          description="O link deixa de funcionar na hora. Se precisar, você pode gerar um convite novo depois."
+                          disabled={action.pending}
+                          onConfirm={() => revoke(invite)}
+                        />
+                      ) : null}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       ) : (
-        <EmptyState title="Nenhum convite enviado">Gere um link acima e envie para a pessoa entrar na empresa.</EmptyState>
+        <div className="my-trails-empty">
+          <div className="my-trails-empty-art" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <MailIcon />
+          </div>
+          <h2>Nenhum convite enviado</h2>
+          <p>Gere um link acima e envie para a pessoa entrar na empresa.</p>
+        </div>
       )}
     </div>
   );

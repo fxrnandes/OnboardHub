@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { jobRolesApi, type JobRole } from '../../api/team';
 import { ConfirmButton } from '../../components/ConfirmButton';
-import { EmptyState } from '../../components/EmptyState';
 import { Field } from '../../components/Field';
 import { FormAlert } from '../../components/FormAlert';
 import { useAction } from '../../components/useAction';
 import { useResource } from '../../components/useResource';
 import { useSubmit } from '../../components/useSubmit';
+import { PencilIcon, PlusIcon, TagIcon } from '../../layout/icons';
 
 const byName = (a: JobRole, b: JobRole) => a.name.localeCompare(b.name, 'pt-BR');
 
@@ -41,83 +41,104 @@ export function JobRolesTab() {
   if (jobRoles.loading && !jobRoles.data) return <p className="page-loading">Carregando cargos…</p>;
   if (jobRoles.error) return <FormAlert message={jobRoles.error} />;
 
+  const list = jobRoles.data ?? [];
+
   return (
-    <div className="stack">
-      <form className="card inline-form" onSubmit={create.onSubmit} noValidate>
-        <Field
-          label="Novo cargo"
-          placeholder="Ex.: Atendimento, Financeiro"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          error={create.fieldError('name') ?? create.formError ?? undefined}
-        />
-        <button type="submit" className="button" disabled={create.pending}>
-          Adicionar
-        </button>
-      </form>
-
-      <FormAlert message={action.error} />
-
-      {jobRoles.data?.length ? (
-        <ul className="list">
-          {jobRoles.data.map((jobRole) => (
-            <li key={jobRole.id} className="list-item">
-              {editing?.id === jobRole.id ? (
-                <form
-                  className="inline-edit"
-                  onSubmit={(event) => {
-                    event.preventDefault();
-                    void saveRename();
-                  }}
-                >
-                  <input
-                    aria-label="Nome do cargo"
-                    value={editing.name}
-                    onChange={(event) => setEditing({ ...editing, name: event.target.value })}
-                    autoFocus
-                  />
-                  <button type="submit" className="button" disabled={action.pending}>
-                    Salvar
-                  </button>
-                  <button type="button" className="button-ghost" onClick={() => setEditing(null)}>
-                    Cancelar
-                  </button>
-                </form>
-              ) : (
-                <>
-                  <div>
-                    <strong>{jobRole.name}</strong>
-                    <div className="muted small">
-                      {jobRole.memberCount === 1 ? '1 pessoa' : `${jobRole.memberCount} pessoas`}
-                    </div>
-                  </div>
-                  <div className="cell-actions">
-                    <button
-                      type="button"
-                      className="button-ghost"
-                      onClick={() => setEditing({ id: jobRole.id, name: jobRole.name })}
-                    >
-                      Renomear
-                    </button>
-                    <ConfirmButton
-                      label="Excluir"
-                      confirmLabel="Excluir cargo"
-                      title={`Excluir o cargo "${jobRole.name}"?`}
-                      description="As pessoas desse cargo ficam sem cargo e deixam de ver as trilhas atribuídas a ele."
-                      disabled={action.pending}
-                      onConfirm={() => remove(jobRole)}
+    <div className="team-split">
+      <div className="team-panel">
+        <FormAlert message={action.error} />
+        {list.length ? (
+          <ul className="role-grid">
+            {list.map((jobRole) => (
+              <li key={jobRole.id} className={editing?.id === jobRole.id ? 'role-card is-editing' : 'role-card'}>
+                {editing?.id === jobRole.id ? (
+                  <form
+                    className="inline-edit"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void saveRename();
+                    }}
+                  >
+                    <input
+                      aria-label="Nome do cargo"
+                      value={editing.name}
+                      onChange={(event) => setEditing({ ...editing, name: event.target.value })}
+                      onKeyDown={(event) => event.key === 'Escape' && setEditing(null)}
+                      autoFocus
                     />
-                  </div>
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <EmptyState title="Nenhum cargo ainda">
-          Crie cargos para direcionar as trilhas de onboarding para as pessoas certas.
-        </EmptyState>
-      )}
+                    <div className="role-card-edit-actions">
+                      <button type="button" className="button button-secondary button-sm" onClick={() => setEditing(null)}>
+                        Cancelar
+                      </button>
+                      <button type="submit" className="button button-sm" disabled={action.pending}>
+                        Salvar
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <>
+                    <span className="role-card-icon" aria-hidden="true">
+                      <TagIcon />
+                    </span>
+                    <div className="role-card-text">
+                      <strong>{jobRole.name}</strong>
+                      <span>{jobRole.memberCount === 1 ? '1 pessoa' : `${jobRole.memberCount} pessoas`}</span>
+                    </div>
+                    <div className="row-actions">
+                      <button
+                        type="button"
+                        className="icon-action"
+                        aria-label="Renomear"
+                        onClick={() => setEditing({ id: jobRole.id, name: jobRole.name })}
+                      >
+                        <PencilIcon />
+                      </button>
+                      <ConfirmButton
+                        icon
+                        label="Excluir"
+                        confirmLabel="Excluir cargo"
+                        title={`Excluir o cargo "${jobRole.name}"?`}
+                        description="As pessoas desse cargo ficam sem cargo e deixam de ver as trilhas atribuídas a ele."
+                        disabled={action.pending}
+                        onConfirm={() => remove(jobRole)}
+                      />
+                    </div>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="my-trails-empty">
+            <div className="my-trails-empty-art" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+              <TagIcon />
+            </div>
+            <h2>Nenhum cargo ainda</h2>
+            <p>Crie cargos para direcionar as trilhas de onboarding para as pessoas certas.</p>
+          </div>
+        )}
+      </div>
+
+      <aside className="side-card team-side">
+        <h2>Criar cargo</h2>
+        <p className="side-card-intro">Cada trilha vale para um ou mais cargos. Quem tem o cargo vê as trilhas dele.</p>
+        <form onSubmit={create.onSubmit} noValidate>
+          <Field
+            label="Novo cargo"
+            placeholder="Ex.: Atendimento, Financeiro"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            error={create.fieldError('name') ?? create.formError ?? undefined}
+          />
+          <button type="submit" className="button team-side-button" disabled={create.pending}>
+            <PlusIcon />
+            Adicionar
+          </button>
+        </form>
+      </aside>
     </div>
   );
 }
