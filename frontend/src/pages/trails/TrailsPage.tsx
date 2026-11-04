@@ -1,16 +1,24 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
+import { relativeDate } from '../../api/reports';
 import { jobRolesApi } from '../../api/team';
-import { trailStatusLabels, trailsApi, type TrailSummary } from '../../api/trails';
+import { trailStatusLabels, trailsApi, type TrailStatus, type TrailSummary } from '../../api/trails';
 import { ConfirmButton } from '../../components/ConfirmButton';
-import { EmptyState } from '../../components/EmptyState';
-import { Field } from '../../components/Field';
 import { FormAlert } from '../../components/FormAlert';
 import { useAction } from '../../components/useAction';
 import { useResource } from '../../components/useResource';
 import { useSubmit } from '../../components/useSubmit';
+import { CopyIcon, LayersIcon, PencilIcon, PlusIcon } from '../../layout/icons';
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+
+type Filter = 'all' | TrailStatus;
+
+const filters: { value: Filter; label: string }[] = [
+  { value: 'all', label: 'Todas' },
+  { value: 'published', label: 'Publicadas' },
+  { value: 'draft', label: 'Rascunhos' },
+];
 
 export function TrailsPage() {
   const navigate = useNavigate();
@@ -18,6 +26,7 @@ export function TrailsPage() {
   const jobRoles = useResource(jobRolesApi.list);
   const action = useAction();
   const [title, setTitle] = useState('');
+  const [filter, setFilter] = useState<Filter>('all');
 
   const create = useSubmit(async () => {
     const trail = await trailsApi.create(title);
@@ -38,75 +47,134 @@ export function TrailsPage() {
     });
   }
 
-  const jobRoleNames = (ids: string[]) =>
-    ids
-      .map((id) => jobRoles.data?.find((jobRole) => jobRole.id === id)?.name)
-      .filter(Boolean)
-      .join(', ');
+  const jobRoleName = (id: string) => jobRoles.data?.find((jobRole) => jobRole.id === id)?.name;
+  const all = trails.data ?? [];
+  const count = (value: Filter) => (value === 'all' ? all.length : all.filter((trail) => trail.status === value).length);
+  const visible = filter === 'all' ? all : all.filter((trail) => trail.status === filter);
+  const createError = create.fieldError('title') ?? create.formError ?? undefined;
 
   return (
-    <section className="page">
-      <header className="page-header">
-        <h1>Trilhas</h1>
-        <p>Monte as trilhas de onboarding em módulos e passos e escolha para quais cargos elas valem.</p>
-      </header>
-
-      <div className="stack">
-        <form className="card inline-form" onSubmit={create.onSubmit} noValidate>
-          <Field
-            label="Nova trilha"
-            placeholder="Ex.: Boas-vindas ao time de atendimento"
+    <section className="trails-page">
+      <header className="page-head">
+        <div className="home-header">
+          <h1>Trilhas</h1>
+          <p>Monte as trilhas de onboarding em módulos e passos e escolha para quais cargos elas valem.</p>
+        </div>
+        <form className="quick-create" onSubmit={create.onSubmit} noValidate>
+          <label htmlFor="new-trail" className="visually-hidden">
+            Nova trilha
+          </label>
+          <input
+            id="new-trail"
+            placeholder="Nome da nova trilha"
             value={title}
+            aria-invalid={createError ? true : undefined}
+            aria-describedby={createError ? 'new-trail-error' : undefined}
             onChange={(event) => setTitle(event.target.value)}
-            error={create.fieldError('title') ?? create.formError ?? undefined}
           />
           <button type="submit" className="button" disabled={create.pending}>
+            <PlusIcon />
             Criar trilha
           </button>
+          {createError ? (
+            <span id="new-trail-error" className="quick-create-error" role="alert">
+              {createError}
+            </span>
+          ) : null}
         </form>
+      </header>
 
-        <FormAlert message={trails.error ?? action.error} />
+      <FormAlert message={trails.error ?? action.error} />
 
-        {trails.loading && !trails.data ? (
-          <p className="page-loading">Carregando trilhas…</p>
-        ) : trails.data?.length ? (
-          <ul className="trail-grid">
-            {trails.data.map((trail) => (
-              <li key={trail.id} className="card trail-card">
-                <div className="trail-card-head">
-                  <span className={`badge status-${trail.status}`}>{trailStatusLabels[trail.status]}</span>
-                </div>
-                <h2>
-                  <Link to={`/trilhas/${trail.id}`}>{trail.title}</Link>
-                </h2>
-                {trail.description ? <p className="trail-card-description">{trail.description}</p> : null}
-                <p className="muted small">
-                  {plural(trail.moduleCount, 'módulo', 'módulos')} · {plural(trail.stepCount, 'passo', 'passos')}
-                </p>
-                <p className="muted small">
-                  {trail.jobRoleIds.length ? `Cargos: ${jobRoleNames(trail.jobRoleIds)}` : 'Nenhum cargo atribuído'}
-                </p>
-                <div className="trail-card-actions">
-                  <Link className="button button-secondary" to={`/trilhas/${trail.id}`}>
-                    Editar
-                  </Link>
-                  <button type="button" className="button-ghost" onClick={() => duplicate(trail)} disabled={action.pending}>
-                    Duplicar
-                  </button>
-                  <ConfirmButton
-                    label="Excluir"
-                    confirmLabel="Confirmar exclusão"
-                    disabled={action.pending}
-                    onConfirm={() => remove(trail)}
-                  />
-                </div>
-              </li>
+      {trails.loading && !trails.data ? (
+        <p className="page-loading">Carregando trilhas…</p>
+      ) : all.length ? (
+        <>
+          <div className="segmented" role="group" aria-label="Filtrar trilhas">
+            {filters.map((option) => (
+              <button key={option.value} type="button" aria-pressed={filter === option.value} onClick={() => setFilter(option.value)}>
+                {option.label}
+                <span className="segmented-count">{count(option.value)}</span>
+              </button>
             ))}
-          </ul>
-        ) : trails.data ? (
-          <EmptyState title="Nenhuma trilha ainda">Crie a primeira trilha acima para começar a montar o onboarding.</EmptyState>
-        ) : null}
-      </div>
+          </div>
+          {visible.length ? (
+            <ul className="trail-table">
+              {visible.map((trail) => (
+                <li key={trail.id} className="trail-row">
+                  <span className={`trail-row-icon is-${trail.status}`} aria-hidden="true">
+                    <LayersIcon />
+                  </span>
+                  <div className="trail-row-info">
+                    <h2>
+                      <Link to={`/trilhas/${trail.id}`}>{trail.title}</Link>
+                    </h2>
+                    <p>{trail.description || 'Sem descrição'}</p>
+                  </div>
+                  <div className="trail-row-meta">
+                    <span className={`status-chip is-${trail.status}`}>{trailStatusLabels[trail.status]}</span>
+                    <span>
+                      {plural(trail.moduleCount, 'módulo', 'módulos')} · {plural(trail.stepCount, 'passo', 'passos')}
+                    </span>
+                  </div>
+                  <div className="trail-row-roles">
+                    {trail.jobRoleIds.length ? (
+                      <>
+                        <span className="visually-hidden">Cargos:</span>
+                        {trail.jobRoleIds.map((id) => (
+                          <span key={id} className="role-tag">
+                            {jobRoleName(id) ?? '…'}
+                          </span>
+                        ))}
+                      </>
+                    ) : (
+                      <span className="trail-row-warning">Nenhum cargo atribuído</span>
+                    )}
+                  </div>
+                  <span className="trail-row-date">Editada {relativeDate(trail.updatedAt).toLowerCase()}</span>
+                  <div className="trail-row-actions">
+                    <Link className="button button-secondary button-sm" to={`/trilhas/${trail.id}`}>
+                      <PencilIcon />
+                      Editar
+                    </Link>
+                    <button
+                      type="button"
+                      className="icon-action"
+                      aria-label="Duplicar"
+                      onClick={() => duplicate(trail)}
+                      disabled={action.pending}
+                    >
+                      <CopyIcon />
+                    </button>
+                    <ConfirmButton
+                      icon
+                      label="Excluir"
+                      confirmLabel="Excluir trilha"
+                      title={`Excluir a trilha "${trail.title}"?`}
+                      description="Os módulos, os passos e o progresso de quem já começou essa trilha serão apagados."
+                      disabled={action.pending}
+                      onConfirm={() => remove(trail)}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="my-trails-none">Nenhuma trilha nesta situação.</p>
+          )}
+        </>
+      ) : trails.data ? (
+        <div className="my-trails-empty">
+          <div className="my-trails-empty-art" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <LayersIcon />
+          </div>
+          <h2>Nenhuma trilha ainda</h2>
+          <p>Dê um nome no campo acima e clique em "Criar trilha" para começar a montar o onboarding.</p>
+        </div>
+      ) : null}
     </section>
   );
 }

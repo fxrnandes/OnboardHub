@@ -101,7 +101,9 @@ export function JobRolesTab() {
                     </button>
                     <ConfirmButton
                       label="Excluir"
-                      confirmLabel="Confirmar exclusão"
+                      confirmLabel="Excluir cargo"
+                      title={`Excluir o cargo "${jobRole.name}"?`}
+                      description="As pessoas desse cargo ficam sem cargo e deixam de ver as trilhas atribuídas a ele."
                       disabled={action.pending}
                       onConfirm={() => remove(jobRole)}
                     />

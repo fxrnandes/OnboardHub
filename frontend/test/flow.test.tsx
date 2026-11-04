@@ -5,6 +5,7 @@ import { tokenStorage } from '../src/api/client';
 import type { TrailTree } from '../src/api/trails';
 import { buildFlow } from '../src/pages/trails/flow/layout';
 import { mockFetch, session, type Routes } from './support/fetch';
+import { confirmInDialog } from './support/dialog';
 import { renderApp } from './support/render';
 
 vi.mock('@xyflow/react', () => ({
@@ -142,7 +143,7 @@ describe('modo fluxo do editor', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Passo 2: Vídeo' }));
     await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Excluir passo' }));
+    await confirmInDialog('Excluir passo');
     expect(await screen.findByText('Como usar')).toBeInTheDocument();
   });
 
@@ -189,7 +190,7 @@ describe('modo fluxo do editor', () => {
     expect(calls.find((call) => call.path === '/trails/t1/modules/order')!.body).toEqual({ moduleIds: ['m2', 'm1'] });
 
     await userEvent.click(screen.getByRole('button', { name: 'Excluir' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Excluir módulo' }));
+    await confirmInDialog('Excluir módulo');
     expect(await screen.findByText('Como usar')).toBeInTheDocument();
   });
 });

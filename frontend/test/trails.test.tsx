@@ -4,6 +4,7 @@ import { tokenStorage } from '../src/api/client';
 import type { TrailTree } from '../src/api/trails';
 import { moveItem } from '../src/api/trails';
 import { mockFetch, session, type Routes } from './support/fetch';
+import { confirmInDialog } from './support/dialog';
 import { renderApp } from './support/render';
 
 const suporte = { id: 'j1', name: 'Suporte', memberCount: 1, createdAt: '' };
@@ -56,7 +57,7 @@ describe('lista de trilhas', () => {
 
     expect(await screen.findByRole('link', { name: 'Boas-vindas' })).toHaveAttribute('href', '/trilhas/t1');
     expect(screen.getByText('2 módulos · 5 passos')).toBeInTheDocument();
-    expect(await screen.findByText('Cargos: Suporte')).toBeInTheDocument();
+    expect(await screen.findByText('Suporte')).toBeInTheDocument();
     expect(screen.getByText('1 módulo · 1 passo')).toBeInTheDocument();
     expect(screen.getByText('Publicada')).toBeInTheDocument();
     expect(screen.getByText('Nenhum cargo atribuído')).toBeInTheDocument();
@@ -91,7 +92,15 @@ describe('lista de trilhas', () => {
 
     const card = screen.getByRole('link', { name: 'Boas-vindas' }).closest('li')!;
     await userEvent.click(within(card).getByRole('button', { name: 'Excluir' }));
-    await userEvent.click(within(card).getByRole('button', { name: 'Confirmar exclusão' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Excluir a trilha "Boas-vindas"?' });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await userEvent.click(within(card).getByRole('button', { name: 'Excluir' }));
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Boas-vindas' })).toBeInTheDocument();
+    await userEvent.click(within(card).getByRole('button', { name: 'Excluir' }));
+    await confirmInDialog('Excluir trilha');
 
     expect(calls.at(-1)).toMatchObject({ method: 'DELETE', path: '/trails/t1' });
     expect(screen.queryByRole('link', { name: 'Boas-vindas' })).not.toBeInTheDocument();
@@ -254,7 +263,7 @@ describe('editor de trilha', () => {
     });
     renderApp('/trilhas/t1');
 
-    await userEvent.click(await screen.findByRole('button', { name: '+ Adicionar passo' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Novo passo' }));
     await userEvent.type(screen.getByLabelText('Título do passo'), 'Leia o manual');
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar passo' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Passo de texto precisa de conteúdo.');
@@ -263,9 +272,9 @@ describe('editor de trilha', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar passo' }));
     expect(await screen.findByText('Leia o manual')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: '+ Adicionar passo' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Novo passo' }));
     await userEvent.type(screen.getByLabelText('Título do passo'), 'Vídeo do CEO');
-    await userEvent.selectOptions(screen.getByLabelText('Tipo'), 'video');
+    await userEvent.click(screen.getByRole('radio', { name: 'Vídeo' }));
     expect(screen.getByLabelText('Explicação (opcional)')).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText('URL'), 'https://youtu.be/abc');
     await userEvent.click(screen.getByRole('button', { name: 'Adicionar passo' }));
@@ -291,7 +300,7 @@ describe('editor de trilha', () => {
 
     const edited = screen.getByText('Leia o manual do sistema').closest('li')!;
     await userEvent.click(within(edited).getByRole('button', { name: 'Excluir' }));
-    await userEvent.click(within(edited).getByRole('button', { name: 'Excluir passo' }));
+    await confirmInDialog('Excluir passo');
     await vi.waitFor(() => expect(screen.queryByText('Leia o manual do sistema')).not.toBeInTheDocument());
 
     await userEvent.click(screen.getByRole('button', { name: 'Renomear' }));

@@ -133,7 +133,9 @@ export function InvitesTab() {
                     {invite.status === 'pending' ? (
                       <ConfirmButton
                         label="Revogar"
-                        confirmLabel="Confirmar"
+                        confirmLabel="Revogar convite"
+                        title="Revogar este convite?"
+                        description="O link deixa de funcionar na hora. Se precisar, você pode gerar um convite novo depois."
                         disabled={action.pending}
                         onConfirm={() => revoke(invite)}
                       />

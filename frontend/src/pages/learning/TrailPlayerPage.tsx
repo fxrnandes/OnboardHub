@@ -6,15 +6,9 @@ import { FormAlert } from '../../components/FormAlert';
 import { ProgressBar } from '../../components/ProgressBar';
 import { useAction } from '../../components/useAction';
 import { useResource } from '../../components/useResource';
-import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, ImageIcon, LinkIcon, PlayIcon, TextIcon, TrophyIcon } from '../../layout/icons';
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, TrophyIcon } from '../../layout/icons';
+import { KindIcon } from '../trails/stepKinds';
 import { StepContent } from './StepContent';
-
-const kindIcons = { text: TextIcon, link: LinkIcon, video: PlayIcon, image: ImageIcon };
-
-function KindIcon({ kind }: { kind: keyof typeof kindIcons }) {
-  const Icon = kindIcons[kind];
-  return <Icon />;
-}
 
 export function TrailPlayerPage() {
   const { id = '' } = useParams();

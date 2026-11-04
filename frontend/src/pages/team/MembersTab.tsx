@@ -100,6 +100,8 @@ export function MembersTab() {
                         <ConfirmButton
                           label="Remover"
                           confirmLabel={`Remover ${member.name.split(' ')[0]}`}
+                          title={`Remover ${member.name} da empresa?`}
+                          description="A pessoa perde o acesso ao OnboardHub e o progresso dela nas trilhas é apagado."
                           disabled={action.pending}
                           onConfirm={() => remove(member)}
                         />

@@ -2,6 +2,7 @@ import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { tokenStorage } from '../src/api/client';
 import { mockFetch, session, type Routes } from './support/fetch';
+import { confirmInDialog } from './support/dialog';
 import { renderApp } from './support/render';
 
 const ana = { id: 'u1', name: 'Ana Souza', email: 'ana@empresa.com', role: 'master', jobRoleId: null, createdAt: '2026-10-01' };
@@ -58,7 +59,7 @@ describe('equipe: pessoas', () => {
 
     const row = (await screen.findByText('Bruno Lima')).closest('tr')!;
     await userEvent.click(within(row).getByRole('button', { name: 'Remover' }));
-    await userEvent.click(within(row).getByRole('button', { name: 'Remover Bruno' }));
+    await confirmInDialog('Remover Bruno');
 
     expect(calls.at(-1)).toMatchObject({ method: 'DELETE', path: '/members/u2' });
     expect(screen.queryByText('Bruno Lima')).not.toBeInTheDocument();
@@ -123,7 +124,7 @@ describe('equipe: cargos', () => {
 
     const financeiroItem = screen.getByText('Financeiro').closest('li')!;
     await userEvent.click(within(financeiroItem).getByRole('button', { name: 'Excluir' }));
-    await userEvent.click(within(financeiroItem).getByRole('button', { name: 'Confirmar exclusão' }));
+    await confirmInDialog('Excluir cargo');
     expect(screen.queryByText('Financeiro')).not.toBeInTheDocument();
   });
 
@@ -222,7 +223,7 @@ describe('equipe: convites', () => {
     expect(within(screen.getByText('edu@empresa.com').closest('tr')!).queryByRole('button')).not.toBeInTheDocument();
 
     await userEvent.click(within(row).getByRole('button', { name: 'Revogar' }));
-    await userEvent.click(within(row).getByRole('button', { name: 'Confirmar' }));
+    await confirmInDialog('Revogar convite');
 
     expect(calls.at(-1)).toMatchObject({ method: 'DELETE', path: '/invites/i1' });
     expect(within(row).getByText('Revogado')).toBeInTheDocument();
