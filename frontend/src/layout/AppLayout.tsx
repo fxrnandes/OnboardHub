@@ -1,8 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FocusEvent, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 import { roleLabels, type Role } from '../api/auth';
 import { useAuth } from '../auth/AuthContext';
-import { ChartIcon, CloseIcon, HomeIcon, LayersIcon, LogoutIcon, MenuIcon, PanelIcon, RouteIcon, UserIcon, UsersIcon } from './icons';
+import { ChartIcon, CloseIcon, HomeIcon, LayersIcon, LogoutIcon, MenuIcon, RouteIcon, SettingsIcon, UserIcon, UsersIcon } from './icons';
 import { Logo, LogoMark } from './Logo';
 
 interface NavItem {
@@ -32,29 +32,26 @@ export const navSections: { title: string; items: NavItem[] }[] = [
   },
 ];
 
-const STORAGE_KEY = 'onboardhub.sidebar';
-
-function readCollapsed() {
-  try {
-    return localStorage.getItem(STORAGE_KEY) === 'collapsed';
-  } catch {
-    return false;
-  }
-}
-
-function saveCollapsed(collapsed: boolean) {
-  try {
-    localStorage.setItem(STORAGE_KEY, collapsed ? 'collapsed' : 'expanded');
-  } catch {
-    return;
-  }
-}
+const OPEN_DELAY = 150;
+const CLOSE_DELAY = 250;
 
 export function AppLayout() {
   const { session, logout } = useAuth();
   const location = useLocation();
-  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const [open, setOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const timer = useRef<number | undefined>(undefined);
+
+  function schedule(next: boolean, delay: number) {
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setOpen(next), delay);
+  }
+
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  function handleBlur(event: FocusEvent<HTMLElement>) {
+    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) schedule(false, CLOSE_DELAY);
+  }
 
   useEffect(() => {
     setDrawerOpen(false);
@@ -76,15 +73,7 @@ export function AppLayout() {
     .map((section) => ({ ...section, items: section.items.filter((item) => !item.roles || item.roles.includes(user.role)) }))
     .filter((section) => section.items.length > 0);
 
-  function toggleCollapsed() {
-    setCollapsed((current) => {
-      saveCollapsed(!current);
-      return !current;
-    });
-  }
-
-  const shellClass = ['app-shell', collapsed && 'is-collapsed', drawerOpen && 'is-drawer-open'].filter(Boolean).join(' ');
-  const toggleLabel = collapsed ? 'Expandir menu' : 'Recolher menu';
+  const shellClass = ['app-shell', open && 'is-sidebar-open', drawerOpen && 'is-drawer-open'].filter(Boolean).join(' ');
 
   return (
     <div className={shellClass}>
@@ -104,8 +93,17 @@ export function AppLayout() {
 
       <button type="button" className="sidebar-backdrop" aria-label="Fechar menu" tabIndex={-1} onClick={() => setDrawerOpen(false)} />
 
-      <aside id="app-sidebar" className="sidebar">
-        <div className="sidebar-brand" title={company.name}>
+      <div className="sidebar-slot" aria-hidden="true" />
+
+      <aside
+        id="app-sidebar"
+        className="sidebar"
+        onMouseEnter={() => schedule(true, OPEN_DELAY)}
+        onMouseLeave={() => schedule(false, CLOSE_DELAY)}
+        onFocus={() => schedule(true, 0)}
+        onBlur={handleBlur}
+      >
+        <div className="sidebar-brand">
           <LogoMark />
           <span className="sidebar-text">
             <strong>{company.name}</strong>
@@ -113,12 +111,22 @@ export function AppLayout() {
           </span>
         </div>
 
+        <div className="sidebar-account">
+          <NavLink to="/perfil" className="sidebar-link sidebar-user">
+            <UserIcon />
+            <span className="sidebar-text">
+              <strong>{user.name.trim().split(/\s+/)[0]}</strong>
+              <span>{roleLabels[user.role]}</span>
+            </span>
+          </NavLink>
+        </div>
+
         <nav aria-label="Principal" className="sidebar-nav">
           {sections.map((section) => (
             <div key={section.title} className="sidebar-section">
               <p className="sidebar-section-title">{section.title}</p>
               {section.items.map((item) => (
-                <NavLink key={item.to} to={item.to} end={item.to === '/'} className="sidebar-link" title={item.label}>
+                <NavLink key={item.to} to={item.to} end={item.to === '/'} className="sidebar-link">
                   {item.icon}
                   <span className="sidebar-label">{item.label}</span>
                 </NavLink>
@@ -128,31 +136,14 @@ export function AppLayout() {
         </nav>
 
         <div className="sidebar-footer">
-          <button
-            type="button"
-            className="sidebar-link sidebar-toggle"
-            aria-label={toggleLabel}
-            aria-expanded={!collapsed}
-            aria-controls="app-sidebar"
-            title={toggleLabel}
-            onClick={toggleCollapsed}
-          >
-            <PanelIcon />
-            <span className="sidebar-label" aria-hidden="true">
-              Recolher
-            </span>
-          </button>
-          <button type="button" className="sidebar-link" title="Sair" onClick={logout}>
+          <NavLink to="/configuracoes" className="sidebar-link">
+            <SettingsIcon />
+            <span className="sidebar-label">Configurações</span>
+          </NavLink>
+          <button type="button" className="sidebar-link sidebar-logout" onClick={logout}>
             <LogoutIcon />
             <span className="sidebar-label">Sair</span>
           </button>
-          <NavLink to="/perfil" className="sidebar-link sidebar-user" title="Meu perfil">
-            <UserIcon />
-            <span className="sidebar-text">
-              <strong>{user.name.trim().split(/\s+/)[0]}</strong>
-              <span>{roleLabels[user.role]}</span>
-            </span>
-          </NavLink>
         </div>
       </aside>
 

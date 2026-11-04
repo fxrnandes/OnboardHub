@@ -191,7 +191,7 @@ describe('início', () => {
   it('mostra atalhos conforme o papel', async () => {
     asColaborador({});
     renderApp('/');
-    expect(await screen.findByRole('link', { name: /Continue o seu onboarding/ })).toHaveAttribute('href', '/minhas-trilhas');
+    expect(await screen.findByRole('link', { name: /Seu onboarding/ })).toHaveAttribute('href', '/minhas-trilhas');
     expect(screen.queryByRole('link', { name: /Convide pessoas/ })).not.toBeInTheDocument();
   });
 });

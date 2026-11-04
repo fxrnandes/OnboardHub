@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { prefersReducedMotion } from '../preferences/preferences';
 
 export const showcaseSteps = [
   'Conheça a empresa e a cultura',
@@ -11,10 +12,6 @@ export const showcaseSteps = [
 const startDelayMs = 900;
 const stepMs = 900;
 const lastTick = showcaseSteps.length + 1;
-
-function prefersReducedMotion() {
-  return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
 
 function CheckIcon() {
   return (
