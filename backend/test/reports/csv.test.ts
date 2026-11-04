@@ -19,8 +19,13 @@ describe('CSV', () => {
     expect(csvCell('+5511999999999')).toBe("'+5511999999999");
   });
 
-  it('deixa vazio o que não tem valor e formata datas', () => {
+  it('deixa vazio o que não tem valor', () => {
     expect(csvCell(null)).toBe('');
-    expect(csvCell(new Date('2026-10-12T15:00:00.000Z'))).toBe('2026-10-12T15:00:00.000Z');
+    expect(csvCell(undefined)).toBe('');
+  });
+
+  it('escreve datas no formato brasileiro e no horário de Brasília', () => {
+    expect(csvCell(new Date('2026-10-12T15:00:00.000Z'))).toBe('12/10/2026 12:00');
+    expect(csvCell(new Date('2026-01-05T02:30:00.000Z'))).toBe('04/01/2026 23:30');
   });
 });

@@ -71,7 +71,7 @@ describe('painel de progresso do gestor (H11, RF16)', () => {
   });
 
   it('exporta o mesmo conteúdo em CSV (RF17)', async () => {
-    const { master, ana, steps } = await scenario();
+    const { master, ana, carla, steps } = await scenario();
     await ana.member.post(`/my/steps/${steps[0].id}/complete`);
 
     const res = await master.get('/reports/progress.csv');
@@ -83,7 +83,10 @@ describe('painel de progresso do gestor (H11, RF16)', () => {
     expect(lines[0]).toBe(
       'Trilha;Nome;E-mail;Cargo;Passos concluídos;Total de passos;Percentual;Concluída;Última atividade',
     );
-    expect(lines.find((line) => line.includes(ana.email))).toContain(`Onboarding do caixa;Pessoa colaborador;${ana.email};Caixa;1;3;33%;Não;`);
+    const anaLine = lines.find((line) => line.includes(ana.email))!;
+    expect(anaLine).toContain(`Onboarding do caixa;Pessoa colaborador;${ana.email};Caixa;1;3;33%;Não;`);
+    expect(anaLine).toMatch(/;\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/);
+    expect(lines.find((line) => line.includes(carla.email))).toMatch(/;Não;$/);
   });
 
   it('gestor também vê o painel; colaborador não', async () => {
