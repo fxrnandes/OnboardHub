@@ -72,3 +72,26 @@ export function buildFlow(trail: TrailTree): { nodes: FlowNode[]; edges: Edge[] 
 
   return { nodes, edges };
 }
+
+const VIEW_PADDING = 32;
+const READABLE_ZOOM = 0.85;
+const MIN_FIT_ZOOM = 0.75;
+
+export interface Bounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export function initialViewport(bounds: Bounds, width: number, height: number) {
+  const fit = Math.min((width - VIEW_PADDING * 2) / bounds.width, (height - VIEW_PADDING * 2) / bounds.height, 1);
+  if (fit < MIN_FIT_ZOOM) {
+    return { x: VIEW_PADDING - bounds.x * READABLE_ZOOM, y: VIEW_PADDING - bounds.y * READABLE_ZOOM, zoom: READABLE_ZOOM };
+  }
+  return {
+    x: (width - bounds.width * fit) / 2 - bounds.x * fit,
+    y: (height - bounds.height * fit) / 2 - bounds.y * fit,
+    zoom: fit,
+  };
+}

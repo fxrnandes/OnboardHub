@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import type { ComponentType, ReactNode } from 'react';
 import { tokenStorage } from '../src/api/client';
 import type { TrailTree } from '../src/api/trails';
-import { buildFlow } from '../src/pages/trails/flow/layout';
+import { buildFlow, initialViewport } from '../src/pages/trails/flow/layout';
 import { mockFetch, session, type Routes } from './support/fetch';
 import { confirmInDialog } from './support/dialog';
 import { renderApp } from './support/render';
@@ -28,6 +28,8 @@ vi.mock('@xyflow/react', () => ({
   ),
   Background: () => null,
   Controls: () => null,
+  useReactFlow: () => ({}),
+  useStore: () => 0,
   Handle: () => null,
   Position: { Left: 'left', Right: 'right', Top: 'top', Bottom: 'bottom' },
 }));
@@ -92,6 +94,23 @@ describe('buildFlow', () => {
     const { nodes, edges } = buildFlow({ ...makeTrail(), modules: [] });
     expect(nodes.map((node) => node.id)).toEqual(['start', 'end', 'add-module']);
     expect(edges).toHaveLength(1);
+  });
+});
+
+describe('initialViewport', () => {
+  it('mostra a trilha inteira e centralizada quando cabe com zoom legível', () => {
+    expect(initialViewport({ x: 0, y: 0, width: 800, height: 300 }, 900, 600)).toEqual({ x: 50, y: 150, zoom: 1 });
+    expect(initialViewport({ x: 0, y: 0, width: 1000, height: 400 }, 864, 600)).toEqual({ x: 32, y: 140, zoom: 0.8 });
+  });
+
+  it('trilha grande abre no começo com zoom legível em vez de encolher tudo', () => {
+    const view = initialViewport({ x: 0, y: 0, width: 1800, height: 520 }, 860, 600);
+    expect(view).toEqual({ x: 32, y: 32, zoom: 0.85 });
+  });
+
+  it('desconta a origem do conteúdo', () => {
+    const view = initialViewport({ x: -10, y: 20, width: 1200, height: 400 }, 360, 460);
+    expect(view).toEqual({ x: 32 + 8.5, y: 32 - 17, zoom: 0.85 });
   });
 });
 

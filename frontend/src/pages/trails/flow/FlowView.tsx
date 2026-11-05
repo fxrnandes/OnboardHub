@@ -1,18 +1,41 @@
-import { Background, Controls, ReactFlow } from '@xyflow/react';
+import { Background, Controls, ReactFlow, useReactFlow, useStore, type ReactFlowState } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { moveItem, trailsApi, type StepInput, type TrailTree } from '../../../api/trails';
 import { ConfirmButton } from '../../../components/ConfirmButton';
 import { Field } from '../../../components/Field';
 import { useSubmit } from '../../../components/useSubmit';
 import { StepForm } from '../StepForm';
-import { buildFlow } from './layout';
+import { buildFlow, initialViewport } from './layout';
 import { FlowContext, nodeTypes, type Selection } from './nodes';
 
 interface FlowViewProps {
   trail: TrailTree;
   busy: boolean;
   run: (action: () => Promise<unknown>) => Promise<boolean>;
+}
+
+const fitOptions = { padding: 0.2, maxZoom: 1 };
+
+function allMeasured(state: ReactFlowState) {
+  const nodes = Array.from(state.nodeLookup.values());
+  return Boolean(state.panZoom) && nodes.length > 0 && nodes.every((node) => node.measured.width && node.measured.height);
+}
+
+function InitialView() {
+  const flow = useReactFlow();
+  const ready = useStore(allMeasured);
+  const width = useStore((state) => state.width);
+  const height = useStore((state) => state.height);
+  const applied = useRef(false);
+
+  useEffect(() => {
+    if (!ready || applied.current || !width || !height) return;
+    applied.current = true;
+    void flow.setViewport(initialViewport(flow.getNodesBounds(flow.getNodes()), width, height));
+  }, [ready, width, height, flow]);
+
+  return null;
 }
 
 export function FlowView({ trail, busy, run }: Readonly<FlowViewProps>) {
@@ -30,13 +53,12 @@ export function FlowView({ trail, busy, run }: Readonly<FlowViewProps>) {
             nodeTypes={nodeTypes}
             nodesDraggable={false}
             nodesConnectable={false}
-            fitView
-            fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
             minZoom={0.3}
             onPaneClick={() => setSelection(null)}
           >
             <Background gap={20} size={1.5} />
-            <Controls showInteractive={false} />
+            <Controls showInteractive={false} fitViewOptions={fitOptions} />
+            <InitialView />
           </ReactFlow>
         </div>
         {selection ? (
@@ -47,7 +69,7 @@ export function FlowView({ trail, busy, run }: Readonly<FlowViewProps>) {
           <aside className="flow-panel flow-panel-hint">
             <strong>Como usar</strong>
             <p>Clique em um módulo ou passo para editar. Use “+ Passo” e “+ Módulo” para montar a trilha.</p>
-            <p>Arraste o quadro para navegar e use a roda do mouse para dar zoom.</p>
+            <p>Arraste o quadro para navegar e use a roda do mouse ou o gesto de pinça para dar zoom. O último botão do canto mostra a trilha inteira.</p>
           </aside>
         )}
       </div>
