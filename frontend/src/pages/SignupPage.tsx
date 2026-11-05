@@ -9,8 +9,8 @@ import { PasswordField } from '../components/PasswordField';
 import { SocialSignIn } from '../components/SocialSignIn';
 import { useSubmit } from '../components/useSubmit';
 import { AuthLayout } from '../layout/AuthLayout';
+import { isEmail } from '../components/email';
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const personFields = ['name', 'email', 'password'];
 
 type Form = { name: string; email: string; password: string; companyName: string; cnpj: string };
@@ -20,7 +20,7 @@ type StepTwoErrors = Partial<Record<'companyName' | 'cnpj', string>>;
 function validateStepOne(form: Form): StepOneErrors {
   const errors: StepOneErrors = {};
   if (form.name.trim().length < 2) errors.name = 'Informe seu nome completo.';
-  if (!emailPattern.test(form.email.trim())) errors.email = 'Informe um e-mail válido.';
+  if (!isEmail(form.email.trim())) errors.email = 'Informe um e-mail válido.';
   if (form.password.length < 8) errors.password = 'A senha precisa ter pelo menos 8 caracteres.';
   return errors;
 }
@@ -37,7 +37,7 @@ function focusFirstInvalid(container: HTMLElement | null) {
   container?.querySelector<HTMLInputElement>('input[aria-invalid="true"]')?.focus();
 }
 
-function StepIndicator({ step }: { step: 1 | 2 }) {
+function StepIndicator({ step }: Readonly<{ step: 1 | 2 }>) {
   return (
     <div className="auth-steps">
       <span className="auth-steps-label">Etapa {step} de 2</span>

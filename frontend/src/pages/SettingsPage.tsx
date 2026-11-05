@@ -16,7 +16,7 @@ const themes: { value: ThemeChoice; label: string; text: string }[] = [
   { value: 'system', label: 'Sistema', text: 'Acompanha a configuração do seu computador.' },
 ];
 
-function SettingsSection({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+function SettingsSection({ title, description, children }: Readonly<{ title: string; description: string; children: ReactNode }>) {
   const id = useId();
   return (
     <section className="settings-section" aria-labelledby={id}>
@@ -29,7 +29,7 @@ function SettingsSection({ title, description, children }: { title: string; desc
   );
 }
 
-function MiniApp({ tone }: { tone: 'light' | 'dark' }) {
+function MiniApp({ tone }: Readonly<{ tone: 'light' | 'dark' }>) {
   return (
     <span className={`mini-app is-${tone}`}>
       <span className="mini-sidebar">
@@ -51,7 +51,7 @@ function MiniApp({ tone }: { tone: 'light' | 'dark' }) {
   );
 }
 
-function ThemePreview({ theme }: { theme: ThemeChoice }) {
+function ThemePreview({ theme }: Readonly<{ theme: ThemeChoice }>) {
   return (
     <span className={`theme-preview is-${theme}`} aria-hidden="true">
       {theme === 'dark' ? <MiniApp tone="dark" /> : <MiniApp tone="light" />}

@@ -63,7 +63,9 @@ export function AuthShowcase() {
           </div>
           <ul className="showcase-steps">
             {showcaseSteps.map((step, index) => {
-              const state = index < done ? ' is-done' : index === done ? ' is-current' : '';
+              let state = '';
+              if (index < done) state = ' is-done';
+              else if (index === done) state = ' is-current';
               return (
                 <li key={step} className={`showcase-step${state}`}>
                   <span className="showcase-check">

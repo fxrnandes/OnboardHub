@@ -6,7 +6,7 @@ interface SelectFieldProps extends SelectHTMLAttributes<HTMLSelectElement> {
   error?: string;
 }
 
-export function SelectField({ label, options, error, ...select }: SelectFieldProps) {
+export function SelectField({ label, options, error, ...select }: Readonly<SelectFieldProps>) {
   const id = useId();
   return (
     <div className="field">

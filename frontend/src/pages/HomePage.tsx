@@ -11,7 +11,7 @@ import { Bone, Loading } from '../components/Skeleton';
 
 const loadReport = () => reportsApi.progress();
 
-function Section({ title, className, hideTitle, children }: { title: string; className: string; hideTitle?: boolean; children: ReactNode }) {
+function Section({ title, className, hideTitle, children }: Readonly<{ title: string; className: string; hideTitle?: boolean; children: ReactNode }>) {
   const id = useId();
   return (
     <section className={className} aria-labelledby={id}>
@@ -23,7 +23,7 @@ function Section({ title, className, hideTitle, children }: { title: string; cla
   );
 }
 
-function ProgressRing({ percent }: { percent: number }) {
+function ProgressRing({ percent }: Readonly<{ percent: number }>) {
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
   return (
@@ -44,7 +44,7 @@ function ProgressRing({ percent }: { percent: number }) {
   );
 }
 
-function NextTrail({ trails }: { trails: MyTrail[] }) {
+function NextTrail({ trails }: Readonly<{ trails: MyTrail[] }>) {
   const pending = trails.filter((trail) => !trail.completed);
   const next = pending.find((trail) => trail.completedSteps > 0) ?? pending[0];
 
@@ -154,6 +154,17 @@ export function HomePage() {
       : []),
   ];
 
+  let next: ReactNode = null;
+  if (trails.data) {
+    next = <NextTrail trails={list} />;
+  } else if (trails.loading) {
+    next = (
+      <Loading label="Carregando suas trilhas…">
+        <div className="sk-hero" />
+      </Loading>
+    );
+  }
+
   return (
     <div className="home">
       <header className="home-header">
@@ -169,13 +180,7 @@ export function HomePage() {
         </p>
       </header>
 
-      {trails.data ? (
-        <NextTrail trails={list} />
-      ) : trails.loading ? (
-        <Loading label="Carregando suas trilhas…">
-          <div className="sk-hero" />
-        </Loading>
-      ) : null}
+      {next}
 
       {manages ? <TeamSummary /> : null}
 

@@ -1,15 +1,15 @@
 const WEIGHTS = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-const SHAPE = /^[0-9A-Z]{12}[0-9]{2}$/;
+const SHAPE = /^[\dA-Z]{12}\d{2}$/;
 
 function checkDigit(base: string): number {
   const weights = WEIGHTS.slice(WEIGHTS.length - base.length);
-  const sum = [...base].reduce((total, char, index) => total + (char.charCodeAt(0) - 48) * weights[index]!, 0);
+  const sum = [...base].reduce((total, char, index) => total + (char.codePointAt(0)! - 48) * weights[index]!, 0);
   const rest = sum % 11;
   return rest < 2 ? 0 : 11 - rest;
 }
 
 export function normalizeCnpj(value: string): string {
-  return value.replace(/[^0-9a-z]/gi, '').toUpperCase();
+  return value.replace(/[^\da-z]/gi, '').toUpperCase();
 }
 
 export function isValidCnpj(cnpj: string): boolean {

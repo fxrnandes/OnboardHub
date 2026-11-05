@@ -28,10 +28,7 @@ export type ProgressStatus = 'not_started' | 'in_progress' | 'completed';
 export const reportsApi = {
   progress: () => api.get<{ trails: TrailReport[]; rows: ProgressRow[] }>('/reports/progress'),
   downloadCsv: (trailId?: string) =>
-    download(
-      `/reports/progress.csv${trailId ? `?trailId=${encodeURIComponent(trailId)}` : ''}`,
-      'progresso-onboarding.csv',
-    ),
+    download(trailId ? `/reports/progress.csv?trailId=${encodeURIComponent(trailId)}` : '/reports/progress.csv', 'progresso-onboarding.csv'),
 };
 
 export function statusOf(row: ProgressRow): ProgressStatus {

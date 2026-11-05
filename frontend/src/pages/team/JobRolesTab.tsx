@@ -8,6 +8,7 @@ import { useResource } from '../../components/useResource';
 import { useSubmit } from '../../components/useSubmit';
 import { PencilIcon, PlusIcon, TagIcon } from '../../layout/icons';
 import { Bone, Loading } from '../../components/Skeleton';
+import { focusOnMount } from '../../components/focusOnMount';
 
 const byName = (a: JobRole, b: JobRole) => a.name.localeCompare(b.name, 'pt-BR');
 
@@ -87,7 +88,7 @@ export function JobRolesTab() {
                       value={editing.name}
                       onChange={(event) => setEditing({ ...editing, name: event.target.value })}
                       onKeyDown={(event) => event.key === 'Escape' && setEditing(null)}
-                      autoFocus
+                      ref={focusOnMount}
                     />
                     <div className="role-card-edit-actions">
                       <button type="button" className="button button-secondary button-sm" onClick={() => setEditing(null)}>

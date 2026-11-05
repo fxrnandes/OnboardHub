@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
-import { learningApi, type LearnerTrail } from '../../api/learning';
+import { learningApi, type LearnerStep, type LearnerTrail } from '../../api/learning';
 import { stepKindLabels } from '../../api/trails';
 import { FormAlert } from '../../components/FormAlert';
 import { ProgressBar } from '../../components/ProgressBar';
@@ -10,6 +10,96 @@ import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, TrophyIcon } from '../../layo
 import { KindIcon } from '../trails/stepKinds';
 import { StepContent } from './StepContent';
 import { Bone, Loading } from '../../components/Skeleton';
+
+function PlayerLoading() {
+  return (
+    <Loading label="Abrindo a trilha…" className="player">
+      <div className="sk-card sk-pad sk-outline">
+        <Bone w={110} h={11} />
+        <Bone w="80%" h={20} r={6} />
+        <Bone h={8} r={4} />
+        {[0, 1].map((group) => (
+          <div key={group} className="sk-outline-group">
+            <Bone w={70} h={10} />
+            <Bone w="60%" h={13} />
+            {[0, 1, 2, 3].map((item) => (
+              <div key={item} className="sk-outline-item">
+                <Bone w={20} h={20} r={10} />
+                <Bone w={`${70 - item * 8}%`} h={12} />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="sk-player-main">
+        <Bone w={240} h={12} />
+        <Bone w="55%" h={34} r={8} />
+        <Bone h={14} />
+        <Bone w="92%" h={14} />
+        <Bone w="74%" h={14} />
+        <Bone h={220} r={16} />
+      </div>
+    </Loading>
+  );
+}
+
+function withStepProgress(
+  state: LearnerTrail,
+  stepId: string,
+  completedAt: string | null,
+  progress: LearnerTrail['progress'],
+): LearnerTrail {
+  return {
+    ...state,
+    progress,
+    trail: {
+      ...state.trail,
+      modules: state.trail.modules.map((module) => ({
+        ...module,
+        steps: module.steps.map((step) => (step.id === stepId ? { ...step, completedAt } : step)),
+      })),
+    },
+  };
+}
+
+function OutlineStep({ step, current, onSelect }: Readonly<{ step: LearnerStep; current: boolean; onSelect: () => void }>) {
+  return (
+    <button
+      type="button"
+      className={current ? 'outline-step current' : 'outline-step'}
+      aria-current={current ? 'step' : undefined}
+      onClick={onSelect}
+    >
+      <span className={step.completedAt ? 'check done' : 'check'} aria-hidden="true">
+        {step.completedAt ? <CheckIcon /> : null}
+      </span>
+      <span className="outline-step-title">
+        {step.title}
+        <span className="sr-only">{step.completedAt ? ' (concluído)' : ''}</span>
+      </span>
+      <span className="outline-step-kind" aria-hidden="true">
+        <KindIcon kind={step.kind} />
+      </span>
+    </button>
+  );
+}
+
+function FinishBanner({ title }: Readonly<{ title: string }>) {
+  return (
+    <output className="finish-banner">
+      <span className="finish-banner-icon" aria-hidden="true">
+        <TrophyIcon />
+      </span>
+      <div>
+        <strong>Trilha concluída!</strong>
+        <span>Você completou todos os passos de "{title}".</span>
+      </div>
+      <Link to="/minhas-trilhas" className="button button-on-brand">
+        Ver minhas trilhas
+      </Link>
+    </output>
+  );
+}
 
 export function TrailPlayerPage() {
   const { id = '' } = useParams();
@@ -30,35 +120,7 @@ export function TrailPlayerPage() {
   }, [currentId]);
 
   if (data.loading && !data.data) {
-    return (
-      <Loading label="Abrindo a trilha…" className="player">
-        <div className="sk-card sk-pad sk-outline">
-          <Bone w={110} h={11} />
-          <Bone w="80%" h={20} r={6} />
-          <Bone h={8} r={4} />
-          {[0, 1].map((group) => (
-            <div key={group} className="sk-outline-group">
-              <Bone w={70} h={10} />
-              <Bone w="60%" h={13} />
-              {[0, 1, 2, 3].map((item) => (
-                <div key={item} className="sk-outline-item">
-                  <Bone w={20} h={20} r={10} />
-                  <Bone w={`${70 - item * 8}%`} h={12} />
-                </div>
-              ))}
-            </div>
-          ))}
-        </div>
-        <div className="sk-player-main">
-          <Bone w={240} h={12} />
-          <Bone w="55%" h={34} r={8} />
-          <Bone h={14} />
-          <Bone w="92%" h={14} />
-          <Bone w="74%" h={14} />
-          <Bone h={220} r={16} />
-        </div>
-      </Loading>
-    );
+    return <PlayerLoading />;
   }
   if (!data.data) {
     return (
@@ -75,21 +137,7 @@ export function TrailPlayerPage() {
   const next = steps[index + 1];
 
   function applyProgress(stepId: string, completedAt: string | null, nextProgress: LearnerTrail['progress']) {
-    data.setData((state) =>
-      state
-        ? {
-            ...state,
-            progress: nextProgress,
-            trail: {
-              ...state.trail,
-              modules: state.trail.modules.map((module) => ({
-                ...module,
-                steps: module.steps.map((step) => (step.id === stepId ? { ...step, completedAt } : step)),
-              })),
-            },
-          }
-        : state,
-    );
+    data.setData((state) => (state ? withStepProgress(state, stepId, completedAt, nextProgress) : state));
   }
 
   async function completeAndAdvance() {
@@ -139,23 +187,7 @@ export function TrailPlayerPage() {
               <ol>
                 {module.steps.map((step) => (
                   <li key={step.id}>
-                    <button
-                      type="button"
-                      className={step.id === currentId ? 'outline-step current' : 'outline-step'}
-                      aria-current={step.id === currentId ? 'step' : undefined}
-                      onClick={() => goTo(step.id)}
-                    >
-                      <span className={step.completedAt ? 'check done' : 'check'} aria-hidden="true">
-                        {step.completedAt ? <CheckIcon /> : null}
-                      </span>
-                      <span className="outline-step-title">
-                        {step.title}
-                        <span className="sr-only">{step.completedAt ? ' (concluído)' : ''}</span>
-                      </span>
-                      <span className="outline-step-kind" aria-hidden="true">
-                        <KindIcon kind={step.kind} />
-                      </span>
-                    </button>
+                    <OutlineStep step={step} current={step.id === currentId} onSelect={() => goTo(step.id)} />
                   </li>
                 ))}
               </ol>
@@ -166,18 +198,7 @@ export function TrailPlayerPage() {
 
       <article className="player-main">
         {justFinished || (progress.completed && !current) ? (
-          <div className="finish-banner" role="status">
-            <span className="finish-banner-icon" aria-hidden="true">
-              <TrophyIcon />
-            </span>
-            <div>
-              <strong>Trilha concluída!</strong>
-              <span>Você completou todos os passos de "{trail.title}".</span>
-            </div>
-            <Link to="/minhas-trilhas" className="button button-on-brand">
-              Ver minhas trilhas
-            </Link>
-          </div>
+          <FinishBanner title={trail.title} />
         ) : null}
 
         <FormAlert message={action.error} />

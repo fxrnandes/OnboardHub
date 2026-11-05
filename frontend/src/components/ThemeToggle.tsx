@@ -4,7 +4,7 @@ import { applyPreferences, savePreferences } from '../preferences/preferences';
 
 const currentTheme = () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 
-export function ThemeToggle({ className }: { className?: string }) {
+export function ThemeToggle({ className }: Readonly<{ className?: string }>) {
   const [theme, setTheme] = useState(currentTheme);
   const dark = theme === 'dark';
 

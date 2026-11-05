@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type DragEvent } from 'react';
+import { useEffect, useId, useRef, useState, type DragEvent, type ReactNode } from 'react';
 import { ApiError } from '../../api/client';
 import { checkFile, formatBytes, mediaRules, uploadMedia, type MediaKind, type StepMedia } from '../../api/media';
 import { ImageIcon, PlayIcon, TrashIcon, UploadIcon } from '../../layout/icons';
@@ -11,7 +11,81 @@ interface MediaPickerProps {
   error?: string;
 }
 
-export function MediaPicker({ kind, value, onChange, onBusyChange, error }: MediaPickerProps) {
+function UploadingCard({ name, progress, onCancel }: Readonly<{ name: string; progress: number; onCancel: () => void }>) {
+  return (
+    <output className="media-uploading">
+      <span className="media-thumb is-icon" aria-hidden="true">
+        <UploadIcon />
+      </span>
+      <div className="media-info">
+        <strong>{name}</strong>
+        <div className="progress" aria-hidden="true">
+          <div className="progress-fill" style={{ width: `${progress}%` }} />
+        </div>
+        <span>Enviando… {progress}%</span>
+      </div>
+      <button type="button" className="button button-secondary button-sm" onClick={onCancel}>
+        Cancelar envio
+      </button>
+    </output>
+  );
+}
+
+function SelectedMedia({ value, inputId, onRemove }: Readonly<{ value: StepMedia; inputId: string; onRemove: () => void }>) {
+  return (
+    <div className="media-selected">
+      {value.kind === 'image' ? (
+        <img className="media-thumb" src={value.url} alt="" />
+      ) : (
+        <span className="media-thumb is-icon" aria-hidden="true">
+          <PlayIcon />
+        </span>
+      )}
+      <div className="media-info">
+        <strong>{value.name}</strong>
+        <span>{formatBytes(value.size)} · enviado</span>
+      </div>
+      <label htmlFor={inputId} className="button button-secondary button-sm media-replace">
+        Trocar arquivo
+      </label>
+      <button type="button" className="icon-action danger" aria-label="Remover arquivo" onClick={onRemove}>
+        <TrashIcon />
+      </button>
+    </div>
+  );
+}
+
+function DropZone({ kind, inputId, label, onFile }: Readonly<{ kind: MediaKind; inputId: string; label: string; onFile: (file: File) => void }>) {
+  const [dragging, setDragging] = useState(false);
+
+  function onDrop(event: DragEvent<HTMLLabelElement>) {
+    event.preventDefault();
+    setDragging(false);
+    const file = event.dataTransfer.files[0];
+    if (file) onFile(file);
+  }
+
+  return (
+    <label
+      htmlFor={inputId}
+      className={dragging ? 'media-drop is-dragging' : 'media-drop'}
+      onDragOver={(event) => {
+        event.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={onDrop}
+    >
+      <span className="media-drop-icon" aria-hidden="true">
+        {kind === 'image' ? <ImageIcon /> : <PlayIcon />}
+      </span>
+      <strong>Arraste {kind === 'image' ? 'a imagem' : 'o vídeo'} aqui ou clique para escolher</strong>
+      <span>{label}</span>
+    </label>
+  );
+}
+
+export function MediaPicker({ kind, value, onChange, onBusyChange, error }: Readonly<MediaPickerProps>) {
   const inputId = useId();
   const hintId = useId();
   const input = useRef<HTMLInputElement>(null);
@@ -19,7 +93,6 @@ export function MediaPicker({ kind, value, onChange, onBusyChange, error }: Medi
   const [progress, setProgress] = useState<number | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
-  const [dragging, setDragging] = useState(false);
   const rule = mediaRules[kind];
 
   useEffect(() => () => cancelUpload.current?.(), []);
@@ -38,9 +111,9 @@ export function MediaPicker({ kind, value, onChange, onBusyChange, error }: Medi
     cancelUpload.current = cancel;
     try {
       onChange(await promise);
-    } catch (caught) {
-      if (!(caught instanceof ApiError && caught.code === 'upload_canceled')) {
-        setProblem(caught instanceof ApiError ? caught.message : 'Não foi possível enviar o arquivo.');
+    } catch (requestError) {
+      if (!(requestError instanceof ApiError && requestError.code === 'upload_canceled')) {
+        setProblem(requestError instanceof ApiError ? requestError.message : 'Não foi possível enviar o arquivo.');
       }
     } finally {
       cancelUpload.current = null;
@@ -51,14 +124,16 @@ export function MediaPicker({ kind, value, onChange, onBusyChange, error }: Medi
     }
   }
 
-  function onDrop(event: DragEvent<HTMLLabelElement>) {
-    event.preventDefault();
-    setDragging(false);
-    const file = event.dataTransfer.files[0];
-    if (file && !uploading) void send(file);
-  }
-
   const message = problem ?? error;
+
+  let body: ReactNode;
+  if (uploading) {
+    body = <UploadingCard name={uploading} progress={progress ?? 0} onCancel={() => cancelUpload.current?.()} />;
+  } else if (value) {
+    body = <SelectedMedia value={value} inputId={inputId} onRemove={() => onChange(null)} />;
+  } else {
+    body = <DropZone kind={kind} inputId={inputId} label={rule.label} onFile={(file) => void send(file)} />;
+  }
 
   return (
     <div className="field media-picker">
@@ -79,62 +154,7 @@ export function MediaPicker({ kind, value, onChange, onBusyChange, error }: Medi
         }}
       />
 
-      {uploading ? (
-        <div className="media-uploading" role="status">
-          <span className="media-thumb is-icon" aria-hidden="true">
-            <UploadIcon />
-          </span>
-          <div className="media-info">
-            <strong>{uploading}</strong>
-            <div className="progress" aria-hidden="true">
-              <div className="progress-fill" style={{ width: `${progress ?? 0}%` }} />
-            </div>
-            <span>Enviando… {progress ?? 0}%</span>
-          </div>
-          <button type="button" className="button button-secondary button-sm" onClick={() => cancelUpload.current?.()}>
-            Cancelar envio
-          </button>
-        </div>
-      ) : value ? (
-        <div className="media-selected">
-          {value.kind === 'image' ? (
-            <img className="media-thumb" src={value.url} alt="" />
-          ) : (
-            <span className="media-thumb is-icon" aria-hidden="true">
-              <PlayIcon />
-            </span>
-          )}
-          <div className="media-info">
-            <strong>{value.name}</strong>
-            <span>
-              {formatBytes(value.size)} · enviado
-            </span>
-          </div>
-          <label htmlFor={inputId} className="button button-secondary button-sm media-replace">
-            Trocar arquivo
-          </label>
-          <button type="button" className="icon-action danger" aria-label="Remover arquivo" onClick={() => onChange(null)}>
-            <TrashIcon />
-          </button>
-        </div>
-      ) : (
-        <label
-          htmlFor={inputId}
-          className={dragging ? 'media-drop is-dragging' : 'media-drop'}
-          onDragOver={(event) => {
-            event.preventDefault();
-            setDragging(true);
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={onDrop}
-        >
-          <span className="media-drop-icon" aria-hidden="true">
-            {kind === 'image' ? <ImageIcon /> : <PlayIcon />}
-          </span>
-          <strong>Arraste {kind === 'image' ? 'a imagem' : 'o vídeo'} aqui ou clique para escolher</strong>
-          <span>{rule.label}</span>
-        </label>
-      )}
+      {body}
 
       <span id={hintId} className="visually-hidden">
         {rule.label}

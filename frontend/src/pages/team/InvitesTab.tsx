@@ -114,7 +114,7 @@ export function InvitesTab() {
         </div>
 
         {link ? (
-          <div className="invite-link" role="status">
+          <output className="invite-link">
             <span className="invite-link-icon" aria-hidden="true">
               <CheckIcon />
             </span>
@@ -128,7 +128,7 @@ export function InvitesTab() {
                 </button>
               </div>
             </div>
-          </div>
+          </output>
         ) : null}
       </form>
 

@@ -1,7 +1,7 @@
 import { useState, type ComponentProps } from 'react';
 import { Field } from './Field';
 
-function EyeIcon({ open }: { open: boolean }) {
+function EyeIcon({ open }: Readonly<{ open: boolean }>) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12z" />

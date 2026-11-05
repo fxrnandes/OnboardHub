@@ -107,10 +107,10 @@ export function ProfilePage() {
           <form className="settings-section-body profile-form" onSubmit={savePassword.onSubmit} noValidate>
             <FormAlert message={passwordFormError} />
             {passwordChanged ? (
-              <div className="form-success" role="status">
+              <output className="form-success">
                 <CheckIcon />
                 Senha alterada. As outras sessões foram encerradas.
-              </div>
+              </output>
             ) : null}
             <div className="profile-fields">
               <PasswordField

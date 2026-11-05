@@ -18,7 +18,7 @@ import {
 } from '../../layout/icons';
 import { prefersReducedMotion } from '../../preferences/preferences';
 
-function Clip({ name, label }: { name: string; label: string }) {
+function Clip({ name, label }: Readonly<{ name: string; label: string }>) {
   const [still] = useState(prefersReducedMotion);
   return (
     <video
@@ -36,7 +36,7 @@ function Clip({ name, label }: { name: string; label: string }) {
   );
 }
 
-function Shot({ name, label }: { name: string; label: string }) {
+function Shot({ name, label }: Readonly<{ name: string; label: string }>) {
   return (
     <>
       <img className="lp-media only-light" src={`/landing/${name}-light.webp`} alt={label} loading="lazy" />
@@ -45,7 +45,7 @@ function Shot({ name, label }: { name: string; label: string }) {
   );
 }
 
-function Window({ children, address }: { children: ReactNode; address: string }) {
+function Window({ children, address }: Readonly<{ children: ReactNode; address: string }>) {
   return (
     <div className="lp-window">
       <div className="lp-window-bar" aria-hidden="true">

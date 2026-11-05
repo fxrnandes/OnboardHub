@@ -9,7 +9,6 @@
   --ob-brand-700: #4636b3;
   --ob-brand-800: #382b8c;
   --ob-brand-900: #2a2066;
-
   --ob-white: #ffffff;
   --ob-on-brand: #ffffff;
   --ob-neutral-25: #fafafb;
@@ -24,17 +23,12 @@
   --ob-neutral-700: #45454f;
   --ob-neutral-800: #2a2a32;
   --ob-ink: #16161d;
-
   --ob-danger: #c8281c;
   --ob-danger-strong: #a81f15;
   --ob-danger-soft: #fdeceb;
-
   --ob-focus-ring: 0 0 0 3px rgba(86, 69, 212, 0.22);
   --ob-shadow-sm: 0 1px 2px rgba(22, 22, 29, 0.08);
   --ob-shadow-lg: 0 12px 32px -12px rgba(22, 22, 29, 0.28);
-}
-
-:root {
   --color-primary: #5645d4;
   --color-primary-pressed: #4534b3;
   --color-on-primary: #ffffff;
@@ -66,12 +60,10 @@
   --color-success: var(--ob-brand-600);
   --color-error: var(--ob-danger);
   --color-error-soft: var(--ob-danger-soft);
-
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-full: 9999px;
-
   --space-xxs: 4px;
   --space-xs: 8px;
   --space-sm: 12px;
@@ -81,14 +73,11 @@
   --space-xxl: 32px;
   --space-xxxl: 40px;
   --space-section: 64px;
-
   --shadow-subtle: rgba(15, 15, 15, 0.04) 0 1px 2px 0;
   --shadow-card: rgba(15, 15, 15, 0.08) 0 4px 12px 0;
   --shadow-modal: rgba(15, 15, 15, 0.16) 0 16px 48px -8px;
-
   --font: 'Inter', -apple-system, system-ui, 'Segoe UI', Helvetica, sans-serif;
   --transition: 150ms ease;
-
   color: var(--color-ink);
   background: var(--color-canvas);
   font-family: var(--font);
@@ -432,7 +421,12 @@
 .settings-link > .icon:last-child {
   margin-left: auto;
   color: var(--ob-neutral-500);
-  transition: transform 150ms ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .settings-link > .icon:last-child {
+    transition: transform 150ms ease;
+  }
 }
 
 .settings-link:hover > .icon:last-child {
@@ -479,6 +473,10 @@
 *::before,
 *::after {
   box-sizing: border-box;
+}
+
+output {
+  display: block;
 }
 
 body {
@@ -708,27 +706,6 @@ a:hover {
   line-height: 1.4;
 }
 
-.form-alert {
-  margin-bottom: var(--space-md);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  background: var(--color-error-soft);
-  color: var(--color-error);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.badge {
-  display: inline-block;
-  padding: 2px var(--space-xs);
-  border-radius: var(--radius-sm);
-  background: var(--color-tint-lavender);
-  color: var(--color-purple-800);
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.4;
-}
-
 .card {
   padding: var(--space-xl);
   border: 1px solid var(--color-hairline);
@@ -792,11 +769,6 @@ a:hover {
   margin: -28px 0 28px;
   color: var(--ob-neutral-600);
   font-size: 15px;
-}
-
-.auth-card .field {
-  gap: 10px;
-  margin-bottom: 16px;
 }
 
 .auth-card .field label {
@@ -908,10 +880,6 @@ a:hover {
   color: var(--ob-neutral-700);
 }
 
-.auth-card .field input[aria-invalid='true'] {
-  border-color: var(--ob-danger);
-}
-
 .auth-card .field input[aria-invalid='true']:focus {
   box-shadow: 0 0 0 3px rgba(224, 49, 49, 0.14);
 }
@@ -926,10 +894,13 @@ a:hover {
 }
 
 .auth-card .field {
+  gap: 10px;
+  margin-bottom: 16px;
   position: relative;
 }
 
 .auth-card .field input[aria-invalid='true'] {
+  border-color: var(--ob-danger);
   padding-right: 46px;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c8281c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.3 3.9 1.8 18.4A2 2 0 0 0 3.5 21.4h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E");
   background-position: right 16px center;
@@ -1991,7 +1962,12 @@ a:hover {
   color: var(--ob-brand-700);
   font-size: 15px;
   font-weight: 600;
-  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-hero-button {
+    transition: transform 150ms ease, box-shadow 150ms ease;
+  }
 }
 
 .home-hero-button:hover {
@@ -2125,7 +2101,12 @@ a:hover {
   border-radius: 14px;
   background: var(--ob-white);
   color: var(--ob-ink);
-  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-shortcut {
+    transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  }
 }
 
 .home-shortcut:hover {
@@ -2172,7 +2153,12 @@ a:hover {
 
 .home-shortcut > .icon {
   color: var(--ob-neutral-400);
-  transition: color 150ms ease, transform 150ms ease;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .home-shortcut > .icon {
+    transition: color 150ms ease, transform 150ms ease;
+  }
 }
 
 .home-shortcut:hover > .icon {
@@ -2331,10 +2317,6 @@ a:hover {
   cursor: not-allowed;
 }
 
-.button-ghost.danger {
-  color: var(--color-error);
-}
-
 .button-ghost.danger.strong {
   background: var(--color-error-soft);
 }
@@ -2491,34 +2473,6 @@ a:hover {
   gap: 0 var(--space-md);
 }
 
-.invite-link {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-  margin-top: var(--space-lg);
-  padding: var(--space-md);
-  border-radius: var(--radius-md);
-  background: var(--color-tint-mint);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.invite-link-row {
-  display: flex;
-  gap: var(--space-xs);
-}
-
-.invite-link-row input {
-  flex: 1;
-  min-width: 0;
-  height: 40px;
-  padding: 0 var(--space-sm);
-  border: 1px solid var(--color-hairline-strong);
-  border-radius: var(--radius-md);
-  font: inherit;
-  font-size: 14px;
-}
-
 .invite-link-row .button {
   min-height: 40px;
   background: var(--color-canvas);
@@ -2532,12 +2486,6 @@ a:hover {
 .badge.status-accepted {
   background: var(--color-tint-mint);
   color: #12722a;
-}
-
-.badge.status-revoked,
-.badge.status-expired {
-  background: var(--color-surface);
-  color: var(--color-steel);
 }
 
 .empty-state {
@@ -2593,21 +2541,6 @@ a:hover {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-}
-
-.saved-note {
-  color: var(--color-success);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.form-warning {
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  background: var(--color-tint-yellow);
-  color: #7a5c00;
-  font-size: 14px;
-  font-weight: 500;
 }
 
 .card-intro {
@@ -2723,37 +2656,9 @@ a:hover {
   color: var(--color-purple-800);
 }
 
-.module-card {
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-lg);
-  background: var(--color-canvas);
-}
-
-.module-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-md) var(--space-lg);
-  border-bottom: 1px solid var(--color-hairline);
-}
-
 .module-head h3 {
   flex: 1;
   margin: 0;
-}
-
-.module-index {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-md);
-  background: var(--color-tint-lavender);
-  color: var(--color-purple-800);
-  font-size: 14px;
-  font-weight: 600;
-  flex: none;
 }
 
 .button-ghost.icon {
@@ -2762,39 +2667,9 @@ a:hover {
   font-size: 16px;
 }
 
-.step-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.step-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  padding: var(--space-sm) var(--space-lg);
-  border-bottom: 1px solid var(--color-hairline-soft);
-}
-
-.step-item.editing {
-  display: block;
-  padding: var(--space-lg);
-  background: var(--color-surface-soft);
-}
-
 .step-title {
   flex: 1;
   font-size: 15px;
-}
-
-.step-kind {
-  flex: none;
-  min-width: 64px;
-  padding: 2px var(--space-xs);
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  font-weight: 600;
-  text-align: center;
 }
 
 .kind-text {
@@ -2815,16 +2690,6 @@ a:hover {
 .kind-image {
   background: var(--color-tint-mint);
   color: #12722a;
-}
-
-.module-empty {
-  margin: 0;
-  padding: var(--space-md) var(--space-lg);
-}
-
-.add-step {
-  margin: var(--space-xs) var(--space-sm) var(--space-sm);
-  color: var(--color-primary);
 }
 
 .step-form-row {
@@ -2887,6 +2752,8 @@ a:hover {
   display: inline-flex;
   align-self: flex-start;
   gap: 2px;
+  min-inline-size: 0;
+  margin: 0;
   padding: 4px;
   border: 1px solid var(--ob-neutral-200);
   border-radius: 12px;
@@ -3441,6 +3308,9 @@ a:hover {
 }
 
 .step-kind {
+  flex: none;
+  min-width: 64px;
+  text-align: center;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -3867,59 +3737,6 @@ a:hover {
   margin: 0;
 }
 
-.flow-shell {
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  min-height: 560px;
-  overflow: hidden;
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-lg);
-  background: var(--color-canvas);
-}
-
-.flow-canvas {
-  position: relative;
-  min-height: 560px;
-  background: var(--color-surface-soft);
-}
-
-.flow-canvas .react-flow__background {
-  color: var(--color-hairline-strong);
-}
-
-.flow-canvas .react-flow__edge-path {
-  stroke: var(--color-hairline-strong);
-  stroke-width: 2;
-}
-
-.flow-canvas .flow-edge-module .react-flow__edge-path {
-  stroke: var(--color-primary);
-  stroke-dasharray: 6 4;
-}
-
-.flow-canvas .react-flow__handle {
-  width: 8px;
-  height: 8px;
-  border: 2px solid var(--color-canvas);
-  background: var(--color-hairline-strong);
-}
-
-.flow-node {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  width: 220px;
-  padding: var(--space-sm) var(--space-md);
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-lg);
-  background: var(--color-canvas);
-  box-shadow: var(--shadow-subtle);
-  color: var(--color-ink);
-  font: inherit;
-  text-align: left;
-}
-
 button.flow-node {
   cursor: pointer;
   transition: border-color var(--transition), box-shadow var(--transition);
@@ -3927,19 +3744,6 @@ button.flow-node {
 
 button.flow-node:hover {
   box-shadow: var(--shadow-card);
-}
-
-.flow-node.selected {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px var(--color-primary);
-}
-
-.flow-node-label {
-  color: var(--color-steel);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
 }
 
 .flow-node strong {
@@ -3951,26 +3755,6 @@ button.flow-node:hover {
 .flow-node-meta {
   color: var(--color-steel);
   font-size: 12px;
-}
-
-.flow-start {
-  border-color: transparent;
-  background: var(--color-navy);
-  color: var(--color-on-dark);
-}
-
-.flow-start .flow-node-label,
-.flow-start .flow-node-meta {
-  color: var(--color-on-dark-muted);
-}
-
-.flow-module {
-  border-color: transparent;
-  background: var(--color-tint-lavender);
-}
-
-.flow-module .flow-node-label {
-  color: var(--color-purple-800);
 }
 
 .flow-step {
@@ -3993,45 +3777,6 @@ button.flow-node:hover {
   overflow: hidden;
 }
 
-.flow-end {
-  border-color: transparent;
-  background: var(--color-tint-mint);
-}
-
-.flow-end .flow-node-label {
-  color: #12722a;
-}
-
-.flow-add {
-  width: 220px;
-  padding: var(--space-xs);
-  border: 1.5px dashed var(--color-hairline-strong);
-  border-radius: var(--radius-lg);
-  background: var(--color-canvas);
-  color: var(--color-primary);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.flow-add:hover {
-  border-color: var(--color-primary);
-  background: var(--color-tint-lavender);
-}
-
-.flow-panel {
-  overflow-y: auto;
-  max-height: 640px;
-  padding: var(--space-lg);
-  border-left: 1px solid var(--color-hairline);
-}
-
-.flow-panel-hint {
-  color: var(--color-slate);
-  font-size: 14px;
-}
-
 .flow-panel-hint p {
   margin: var(--space-xs) 0 0;
 }
@@ -4040,10 +3785,6 @@ button.flow-node:hover {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-}
-
-.flow-panel-head h3 {
-  margin: 0;
 }
 
 .flow-panel-actions {
@@ -4114,18 +3855,6 @@ a.button.button-light:hover {
   align-items: start;
   gap: var(--space-xl);
 }
-
-.form-success {
-  margin-bottom: var(--space-md);
-  padding: var(--space-sm) var(--space-md);
-  border-radius: var(--radius-md);
-  background: var(--color-tint-mint);
-  color: #12722a;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-
 
 .button-sm {
   min-height: 36px;
@@ -4215,8 +3944,12 @@ a.button.button-light:hover {
 }
 
 .dialog {
+  position: relative;
+  inset: auto;
   width: min(440px, 100%);
+  margin: 0;
   padding: 28px;
+  color: inherit;
   border: 1px solid var(--ob-neutral-200);
   border-radius: 20px;
   background: var(--ob-white);
@@ -4374,6 +4107,11 @@ a.button.button-light:hover {
 }
 
 .form-alert {
+  margin-bottom: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 500;
   border: 1px solid color-mix(in srgb, var(--ob-danger) 30%, transparent);
   background: var(--ob-danger-soft);
   color: var(--ob-danger);
@@ -4856,6 +4594,8 @@ a.button.button-light:hover {
 }
 
 .module-index {
+  align-items: center;
+  justify-content: center;
   display: grid;
   flex: none;
   place-items: center;
@@ -4915,6 +4655,7 @@ a.button.button-light:hover {
 }
 
 .step-item {
+  border-bottom: 1px solid var(--color-hairline-soft);
   display: grid;
   grid-template-columns: 34px 36px minmax(0, 1fr) 70px auto;
   align-items: center;
@@ -5189,6 +4930,8 @@ a.button.button-light:hover {
 }
 
 .flow-shell {
+  display: grid;
+  overflow: hidden;
   grid-template-columns: minmax(0, 1fr) 380px;
   min-height: 600px;
   border: 1px solid var(--ob-neutral-200);
@@ -5197,6 +4940,7 @@ a.button.button-light:hover {
 }
 
 .flow-canvas {
+  position: relative;
   min-height: 600px;
   background: var(--ob-neutral-25);
 }
@@ -5206,14 +4950,19 @@ a.button.button-light:hover {
 }
 
 .flow-canvas .react-flow__edge-path {
+  stroke-width: 2;
   stroke: var(--ob-neutral-300);
 }
 
 .flow-canvas .flow-edge-module .react-flow__edge-path {
+  stroke-dasharray: 6 4;
   stroke: var(--ob-brand-400);
 }
 
 .flow-canvas .react-flow__handle {
+  width: 8px;
+  height: 8px;
+  border: 2px solid var(--color-canvas);
   border-color: var(--ob-white);
   background: var(--ob-neutral-300);
 }
@@ -5238,6 +4987,15 @@ a.button.button-light:hover {
 }
 
 .flow-node {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 220px;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-hairline);
+  font: inherit;
+  text-align: left;
   border-color: var(--ob-neutral-200);
   border-radius: 14px;
   background: var(--ob-white);
@@ -5251,6 +5009,10 @@ a.button.button-light:hover {
 }
 
 .flow-node-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
   color: var(--ob-neutral-500);
 }
 
@@ -5284,6 +5046,13 @@ a.button.button-light:hover {
 }
 
 .flow-add {
+  width: 220px;
+  padding: var(--space-xs);
+  border: 1.5px dashed var(--color-hairline-strong);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
   border-color: var(--ob-neutral-300);
   border-radius: 14px;
   background: var(--ob-white);
@@ -5296,12 +5065,14 @@ a.button.button-light:hover {
 }
 
 .flow-panel {
+  overflow-y: auto;
   max-height: 720px;
   padding: 22px;
   border-left: 1px solid var(--ob-neutral-200);
 }
 
 .flow-panel-hint {
+  font-size: 14px;
   color: var(--ob-neutral-600);
 }
 
@@ -5310,6 +5081,7 @@ a.button.button-light:hover {
 }
 
 .flow-panel-head h3 {
+  margin: 0;
   color: var(--ob-ink);
   font-size: 17px;
 }
@@ -6127,24 +5899,6 @@ a.button.button-light:hover {
   opacity: 1;
 }
 
-.role-card.is-editing {
-  border-color: var(--ob-brand-300);
-  box-shadow: 0 0 0 4px var(--ob-brand-50);
-}
-
-.role-card .inline-edit {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.role-card .inline-edit input {
-  width: 100%;
-  height: 38px;
-  border-radius: 10px;
-}
-
 .role-card-edit-actions {
   display: flex;
   justify-content: flex-end;
@@ -6174,15 +5928,6 @@ a.button.button-light:hover {
   min-width: 0;
 }
 
-.role-card-text strong {
-  overflow: hidden;
-  color: var(--ob-ink);
-  font-size: 15px;
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .role-card-text span {
   color: var(--ob-neutral-500);
   font-size: 13px;
@@ -6207,13 +5952,10 @@ a.button.button-light:hover {
   margin-top: 26px;
 }
 
-.invite-card .field select,
-.invite-card .field input {
-  height: 44px;
-  border-radius: 11px;
-}
-
 .invite-link {
+  flex-direction: column;
+  font-size: 14px;
+  font-weight: 500;
   display: flex;
   align-items: flex-start;
   gap: 14px;
@@ -6308,6 +6050,8 @@ a.button.button-light:hover {
 
 .invite-card .field select,
 .invite-card .field input {
+  height: 44px;
+  border-radius: 11px;
   width: 100%;
   padding: 0 14px;
   border: 1px solid var(--ob-neutral-200);
@@ -6332,21 +6076,24 @@ a.button.button-light:hover {
 }
 
 .role-card-text strong {
+  color: var(--ob-ink);
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
   overflow: visible;
   white-space: normal;
   overflow-wrap: anywhere;
 }
 
 .role-card.is-editing {
+  border-color: var(--ob-brand-300);
+  box-shadow: 0 0 0 4px var(--ob-brand-50);
   align-items: stretch;
   padding: 14px;
 }
 
-.role-card .inline-edit {
-  gap: 10px;
-}
-
 .role-card .inline-edit input {
+  width: 100%;
   flex: none;
   height: 40px;
   padding: 0 12px;
@@ -6373,20 +6120,20 @@ a.button.button-light:hover {
 }
 
 .role-card .inline-edit {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
   align-items: stretch;
 }
 
 
-.only-dark {
-  display: none !important;
-}
-
-:root[data-theme='dark'] .only-dark {
-  display: block !important;
+:root:not([data-theme='dark']) .only-dark {
+  display: none;
 }
 
 :root[data-theme='dark'] .only-light {
-  display: none !important;
+  display: none;
 }
 
 .lp {
@@ -6476,11 +6223,6 @@ a.button.button-light:hover {
   margin-left: auto;
 }
 
-.lp-nav .button {
-  min-height: 40px;
-  border-radius: 11px;
-}
-
 .lp-button-lg,
 .button.lp-button-lg {
   min-height: 50px;
@@ -6506,6 +6248,7 @@ a.button.button-light:hover {
   background:
     radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, var(--ob-brand-200) 55%, transparent) 0%, transparent 70%),
     var(--lp-page);
+  padding-bottom: 96px;
 }
 
 :root[data-theme='dark'] .lp-hero {
@@ -7752,6 +7495,8 @@ a.button.button-light:hover {
 }
 
 .lp-nav .button {
+  min-height: 40px;
+  border-radius: 11px;
   white-space: nowrap;
 }
 
@@ -7792,10 +7537,6 @@ a.button.button-light:hover {
   .lp-nav .lp-theme {
     margin-left: 6px;
   }
-}
-
-.lp-hero {
-  padding-bottom: 96px;
 }
 
 @media (max-width: 640px) {

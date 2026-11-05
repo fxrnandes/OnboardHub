@@ -33,9 +33,9 @@ export function SocialSignIn() {
         Continuar com Google
       </button>
       {notice ? (
-        <p role="status" className="auth-social-notice">
+        <output className="auth-social-notice">
           {notice}
-        </p>
+        </output>
       ) : null}
       <div className="auth-divider">
         <span>ou</span>

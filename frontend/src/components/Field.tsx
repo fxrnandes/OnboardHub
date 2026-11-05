@@ -1,4 +1,5 @@
 import { useId, type InputHTMLAttributes, type ReactNode } from 'react';
+import { describedByOf, FieldMessage } from './FieldMessage';
 
 interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -8,9 +9,9 @@ interface FieldProps extends InputHTMLAttributes<HTMLInputElement> {
   trailing?: ReactNode;
 }
 
-export function Field({ label, error, hint, action, trailing, 'aria-invalid': invalid, ...input }: FieldProps) {
+export function Field({ label, error, hint, action, trailing, 'aria-invalid': invalid, ...input }: Readonly<FieldProps>) {
   const id = useId();
-  const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
+  const describedBy = describedByOf(id, error, hint);
   const labelElement = <label htmlFor={id}>{label}</label>;
   const inputElement = <input id={id} aria-invalid={error ? true : invalid} aria-describedby={describedBy} {...input} />;
 
@@ -32,15 +33,7 @@ export function Field({ label, error, hint, action, trailing, 'aria-invalid': in
       ) : (
         inputElement
       )}
-      {error ? (
-        <span id={`${id}-error`} className="field-error">
-          {error}
-        </span>
-      ) : hint ? (
-        <span id={`${id}-hint`} className="field-hint">
-          {hint}
-        </span>
-      ) : null}
+      <FieldMessage id={id} error={error} hint={hint} />
     </div>
   );
 }

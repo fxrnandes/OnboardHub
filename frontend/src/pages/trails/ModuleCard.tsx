@@ -4,6 +4,7 @@ import { ConfirmButton } from '../../components/ConfirmButton';
 import { ArrowDownIcon, ArrowUpIcon, PencilIcon, PlusIcon } from '../../layout/icons';
 import { StepForm } from './StepForm';
 import { KindIcon, stepDetail } from './stepKinds';
+import { focusOnMount } from '../../components/focusOnMount';
 
 interface ModuleCardProps {
   module: TrailModule;
@@ -14,9 +15,15 @@ interface ModuleCardProps {
   onMove: (offset: -1 | 1) => void;
 }
 
-export function ModuleCard({ module, index, total, busy, run, onMove }: ModuleCardProps) {
+function deletionText(stepCount: number) {
+  if (stepCount === 0) return 'O módulo está vazio, nenhum passo será apagado.';
+  if (stepCount === 1) return 'O passo dentro dele também será apagado, junto com o progresso das pessoas.';
+  return `Os ${stepCount} passos dentro dele também serão apagados, junto com o progresso das pessoas.`;
+}
+
+export function ModuleCard({ module, index, total, busy, run, onMove }: Readonly<ModuleCardProps>) {
   const [renaming, setRenaming] = useState<string | null>(null);
-  const [editingStep, setEditingStep] = useState<string | 'new' | null>(null);
+  const [editingStep, setEditingStep] = useState<string | null>(null);
 
   async function rename() {
     if (renaming === null) return;
@@ -26,7 +33,7 @@ export function ModuleCard({ module, index, total, busy, run, onMove }: ModuleCa
   async function saveStep(input: StepInput, step?: Step) {
     await (step ? trailsApi.updateStep(step.id, input) : trailsApi.addStep(module.id, input));
     setEditingStep(null);
-    await run(async () => undefined);
+    await run(() => Promise.resolve());
   }
 
   function moveStep(stepIndex: number, offset: -1 | 1) {
@@ -52,7 +59,7 @@ export function ModuleCard({ module, index, total, busy, run, onMove }: ModuleCa
               void rename();
             }}
           >
-            <input aria-label="Nome do módulo" value={renaming} onChange={(event) => setRenaming(event.target.value)} autoFocus />
+            <input aria-label="Nome do módulo" value={renaming} onChange={(event) => setRenaming(event.target.value)} ref={focusOnMount} />
             <button type="button" className="button button-secondary button-sm" onClick={() => setRenaming(null)}>
               Cancelar
             </button>
@@ -95,13 +102,7 @@ export function ModuleCard({ module, index, total, busy, run, onMove }: ModuleCa
                 label="Excluir"
                 confirmLabel="Excluir módulo"
                 title={`Excluir o módulo "${module.title}"?`}
-                description={
-                  stepCount === 0
-                    ? 'O módulo está vazio, nenhum passo será apagado.'
-                    : stepCount === 1
-                      ? 'O passo dentro dele também será apagado, junto com o progresso das pessoas.'
-                      : `Os ${stepCount} passos dentro dele também serão apagados, junto com o progresso das pessoas.`
-                }
+                description={deletionText(stepCount)}
                 disabled={busy}
                 onConfirm={() => void run(() => trailsApi.removeModule(module.id))}
               />

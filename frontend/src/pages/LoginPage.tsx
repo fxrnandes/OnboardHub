@@ -9,8 +9,8 @@ import { SocialSignIn } from '../components/SocialSignIn';
 import { useSubmit } from '../components/useSubmit';
 import { CheckIcon } from '../layout/icons';
 import { AuthLayout } from '../layout/AuthLayout';
+import { isEmail } from '../components/email';
 
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 type Errors = Partial<Record<'email' | 'password', string>>;
 
@@ -43,7 +43,7 @@ export function LoginPage() {
 
   function submit(event: FormEvent) {
     const found: Errors = {};
-    if (!emailPattern.test(email.trim())) found.email = 'Informe um e-mail válido.';
+    if (!isEmail(email.trim())) found.email = 'Informe um e-mail válido.';
     if (!password) found.password = 'Informe a senha.';
     setErrors(found);
     setAttempt((current) => current + 1);
@@ -68,10 +68,10 @@ export function LoginPage() {
       <SocialSignIn />
       <form ref={formRef} onSubmit={submit} noValidate>
         {notice ? (
-          <div className="form-success" role="status">
+          <output className="form-success">
             <CheckIcon />
             {notice}
-          </div>
+          </output>
         ) : null}
         <FormAlert message={wrongCredentials ? null : formError} />
         <Field

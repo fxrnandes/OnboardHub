@@ -15,7 +15,7 @@ interface FlowViewProps {
   run: (action: () => Promise<unknown>) => Promise<boolean>;
 }
 
-export function FlowView({ trail, busy, run }: FlowViewProps) {
+export function FlowView({ trail, busy, run }: Readonly<FlowViewProps>) {
   const [selection, setSelection] = useState<Selection>(null);
   const { nodes, edges } = useMemo(() => buildFlow(trail), [trail]);
   const context = useMemo(() => ({ selection, select: setSelection }), [selection]);
@@ -63,7 +63,7 @@ interface PanelProps {
   close: () => void;
 }
 
-function SelectionPanel({ trail, selection, busy, run, close }: PanelProps) {
+function SelectionPanel({ trail, selection, busy, run, close }: Readonly<PanelProps>) {
   if (selection.type === 'newModule') return <NewModulePanel trail={trail} run={run} close={close} />;
 
   if (selection.type === 'module') {
@@ -84,7 +84,7 @@ function SelectionPanel({ trail, selection, busy, run, close }: PanelProps) {
 
   async function save(input: StepInput) {
     await (step ? trailsApi.updateStep(step.id, input) : trailsApi.addStep(module!.id, input));
-    await run(async () => undefined);
+    await run(() => Promise.resolve());
     close();
   }
 
@@ -135,7 +135,7 @@ function ModulePanel({ trail, index, busy, run, close }: { trail: TrailTree; ind
 
   const rename = useSubmit(async () => {
     await trailsApi.renameModule(module.id, title);
-    await run(async () => undefined);
+    await run(() => Promise.resolve());
   });
 
   function move(offset: -1 | 1) {
@@ -188,11 +188,11 @@ function ModulePanel({ trail, index, busy, run, close }: { trail: TrailTree; ind
   );
 }
 
-function NewModulePanel({ trail, run, close }: Pick<PanelProps, 'trail' | 'run' | 'close'>) {
+function NewModulePanel({ trail, run, close }: Readonly<Pick<PanelProps, 'trail' | 'run' | 'close'>>) {
   const [title, setTitle] = useState('');
   const create = useSubmit(async () => {
     await trailsApi.addModule(trail.id, title);
-    await run(async () => undefined);
+    await run(() => Promise.resolve());
     close();
   });
 

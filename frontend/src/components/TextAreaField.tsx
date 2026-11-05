@@ -1,4 +1,5 @@
 import { useId, type TextareaHTMLAttributes } from 'react';
+import { describedByOf, FieldMessage } from './FieldMessage';
 
 interface TextAreaFieldProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
   label: string;
@@ -6,23 +7,15 @@ interface TextAreaFieldProps extends TextareaHTMLAttributes<HTMLTextAreaElement>
   hint?: string;
 }
 
-export function TextAreaField({ label, error, hint, ...textarea }: TextAreaFieldProps) {
+export function TextAreaField({ label, error, hint, ...textarea }: Readonly<TextAreaFieldProps>) {
   const id = useId();
-  const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
+  const describedBy = describedByOf(id, error, hint);
 
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
       <textarea id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy} {...textarea} />
-      {error ? (
-        <span id={`${id}-error`} className="field-error">
-          {error}
-        </span>
-      ) : hint ? (
-        <span id={`${id}-hint`} className="field-hint">
-          {hint}
-        </span>
-      ) : null}
+      <FieldMessage id={id} error={error} hint={hint} />
     </div>
   );
 }

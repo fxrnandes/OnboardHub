@@ -10,7 +10,9 @@ import {
   reportsApi,
   statusOf,
   type ProgressRow,
+  type Overview,
   type ProgressStatus,
+  type TrailReport,
 } from '../../api/reports';
 import { FormAlert } from '../../components/FormAlert';
 import { ProgressBar } from '../../components/ProgressBar';
@@ -22,7 +24,7 @@ import { Bone, HeaderBones, Loading, TableBones } from '../../components/Skeleto
 type StatusFilter = ProgressStatus | 'stalled' | 'all';
 
 
-function Ring({ percent }: { percent: number }) {
+function Ring({ percent }: Readonly<{ percent: number }>) {
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
   return (
@@ -47,6 +49,267 @@ function idleText(row: ProgressRow, now: number) {
   return row.lastActivityAt ? `sem avançar há ${days} dias` : `não começou em ${days} dias`;
 }
 
+function DashboardLoading() {
+  return (
+    <Loading label="Carregando o painel…" className="dash">
+      <HeaderBones action />
+      <div className="sk-stats">
+        <div className="sk-card sk-stat is-hero" />
+        {[0, 1, 2].map((item) => (
+          <div key={item} className="sk-card sk-stat">
+            <Bone w="55%" h={12} />
+            <Bone w={70} h={32} r={8} />
+            <Bone w="70%" h={11} />
+          </div>
+        ))}
+      </div>
+      <div className="sk-split">
+        <div className="sk-card sk-pad">
+          <Bone w={120} h={16} />
+          {[0, 1, 2, 3].map((item) => (
+            <div key={item} className="sk-bar-row">
+              <Bone w="40%" h={13} />
+              <Bone h={8} r={4} />
+              <Bone w={36} h={13} />
+            </div>
+          ))}
+        </div>
+        <div className="sk-card sk-pad">
+          <Bone w={160} h={16} />
+          {[0, 1, 2].map((item) => (
+            <div key={item} className="sk-person">
+              <Bone w={32} h={32} r={9} />
+              <div className="sk-row-text">
+                <Bone w="50%" h={13} />
+                <Bone w="70%" h={10} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <TableBones rows={5} />
+    </Loading>
+  );
+}
+
+function NothingToTrack() {
+  return (
+    <div className="my-trails-empty">
+      <div className="my-trails-empty-art" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+        <ChartIcon />
+      </div>
+      <h2>Ainda não há o que acompanhar</h2>
+      <p>
+        O painel mostra as pessoas dos cargos atribuídos a trilhas publicadas. <Link to="/trilhas">Publique uma trilha</Link> e
+        atribua cargos a ela.
+      </p>
+    </div>
+  );
+}
+
+function StatCards({ stats }: Readonly<{ stats: Overview }>) {
+  return (
+    <dl className="dash-stats">
+      <div className="dash-stat is-hero">
+        <dt>Progresso médio</dt>
+        <dd>{stats.averagePercent}%</dd>
+        <span className="dash-stat-hint">
+          em {stats.trails} {stats.trails === 1 ? 'trilha publicada' : 'trilhas publicadas'}
+        </span>
+        <Ring percent={stats.averagePercent} />
+      </div>
+      <div className="dash-stat">
+        <span className="dash-stat-icon" aria-hidden="true">
+          <UsersIcon />
+        </span>
+        <dt>Pessoas em onboarding</dt>
+        <dd>{stats.people}</dd>
+        <span className="dash-stat-hint">com pelo menos uma trilha</span>
+      </div>
+      <div className="dash-stat">
+        <span className="dash-stat-icon" aria-hidden="true">
+          <CheckIcon />
+        </span>
+        <dt>Trilhas concluídas</dt>
+        <dd>
+          {stats.completedAssignments}
+          <span>/{stats.assignments}</span>
+        </dd>
+        <span className="dash-stat-hint">trilhas atribuídas já finalizadas</span>
+      </div>
+      <div className={stats.stalled ? 'dash-stat is-alert' : 'dash-stat'}>
+        <span className="dash-stat-icon" aria-hidden="true">
+          <ClockIcon />
+        </span>
+        <dt>Paradas há 7+ dias</dt>
+        <dd>{stats.stalled}</dd>
+        <span className="dash-stat-hint">sem avançar nenhum passo</span>
+      </div>
+    </dl>
+  );
+}
+
+function TrailBreakdown({
+  trails,
+  trailId,
+  setTrailId,
+}: Readonly<{ trails: TrailReport[]; trailId: string; setTrailId: (id: string) => void }>) {
+  return (
+    <section className="dash-card" aria-labelledby="por-trilha">
+      <header className="dash-card-head">
+        <h2 id="por-trilha">Por trilha</h2>
+        <span>Clique para filtrar a tabela</span>
+      </header>
+      <ul className="dash-trails">
+        {trails.map((trail) => {
+          const selected = trailId === trail.trailId;
+          return (
+            <li key={trail.trailId}>
+              <button
+                type="button"
+                className={selected ? 'dash-trail is-selected' : 'dash-trail'}
+                aria-pressed={selected}
+                onClick={() => setTrailId(selected ? '' : trail.trailId)}
+              >
+                <span className="dash-trail-title">{trail.title}</span>
+                <span className="dash-trail-bar">
+                  <ProgressBar percent={trail.averagePercent} label={`Progresso médio em ${trail.title}`} />
+                </span>
+                <span className="dash-trail-percent">{trail.averagePercent}%</span>
+                <span className="dash-trail-meta">
+                  {trail.completed} de {trail.assigned} {trail.assigned === 1 ? 'pessoa concluiu' : 'pessoas concluíram'}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+function AttentionCard({
+  attention,
+  stalled,
+  now,
+  showStalled,
+}: Readonly<{ attention: ProgressRow[]; stalled: number; now: number; showStalled: () => void }>) {
+  return (
+    <section className="dash-card" aria-labelledby="atencao">
+      <header className="dash-card-head">
+        <h2 id="atencao">Precisam de atenção</h2>
+        {stalled ? (
+          <button type="button" className="dash-link" onClick={showStalled}>
+            Ver {stalled === 1 ? 'a pessoa' : `as ${stalled}`}
+            <ArrowRightIcon />
+          </button>
+        ) : null}
+      </header>
+      {attention.length ? (
+        <ul className="dash-attention">
+          {attention.map((row) => (
+            <li key={`${row.trailId}-${row.userId}`}>
+              <span className="dash-attention-icon" aria-hidden="true">
+                <AlertIcon />
+              </span>
+              <span className="dash-attention-text">
+                <strong>{row.name}</strong>
+                <span>
+                  {row.trailTitle} · {row.percent}%
+                </span>
+              </span>
+              <span className="dash-attention-idle">{idleText(row, now)}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="dash-all-good">
+          <span aria-hidden="true">
+            <CheckIcon />
+          </span>
+          <p>Ninguém parado há mais de 7 dias. Todo mundo está avançando.</p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+function PeopleTable({ filtered, now }: Readonly<{ filtered: ProgressRow[]; now: number }>) {
+  if (!filtered.length) {
+    return (
+      <div className="dash-none">
+        <strong>Ninguém encontrado</strong>
+        <p>Ajuste a busca ou os filtros.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="table-wrap">
+      <table className="dash-table">
+        <thead>
+          <tr>
+            <th>Pessoa</th>
+            <th>Trilha</th>
+            <th>Progresso</th>
+            <th>Última atividade</th>
+            <th>Situação</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filtered.map((row) => {
+            const rowStatus = statusOf(row);
+            const stalled = isStalled(row, now);
+            return (
+              <tr key={`${row.trailId}-${row.userId}`}>
+                <td>
+                  <strong>{row.name}</strong>
+                  <span className="dash-sub">{row.jobRoleName ?? row.email}</span>
+                </td>
+                <td>{row.trailTitle}</td>
+                <td className="dash-progress">
+                  <ProgressBar percent={row.percent} label={`Progresso de ${row.name} em ${row.trailTitle}`} />
+                  <span>
+                    {row.completedSteps}/{row.totalSteps} · {row.percent}%
+                  </span>
+                </td>
+                <td className={stalled ? 'dash-idle is-stalled' : 'dash-idle'}>{relativeDate(row.lastActivityAt)}</td>
+                <td>
+                  <span className={`badge progress-${rowStatus}`}>{progressStatusLabels[rowStatus]}</span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+interface Filters {
+  trailId: string;
+  status: StatusFilter;
+  search: string;
+}
+
+function matchesStatus(row: ProgressRow, status: StatusFilter, now: number) {
+  if (status === 'all') return true;
+  if (status === 'stalled') return isStalled(row, now);
+  return statusOf(row) === status;
+}
+
+function filterRows(rows: ProgressRow[], { trailId, status, search }: Filters, now: number) {
+  const term = search.trim().toLowerCase();
+  return rows.filter(
+    (row) =>
+      (!trailId || row.trailId === trailId) &&
+      matchesStatus(row, status, now) &&
+      (!term || row.name.toLowerCase().includes(term) || row.email.toLowerCase().includes(term)),
+  );
+}
+
 export function DashboardPage() {
   const report = useResource(reportsApi.progress);
   const exporting = useAction();
@@ -65,15 +328,7 @@ export function DashboardPage() {
     .sort((a, b) => idleSince(a).localeCompare(idleSince(b)))
     .slice(0, 5);
 
-  const filtered = rows.filter((row) => {
-    const term = search.trim().toLowerCase();
-    const matchesStatus = status === 'all' || (status === 'stalled' ? isStalled(row, now) : statusOf(row) === status);
-    return (
-      (!trailId || row.trailId === trailId) &&
-      matchesStatus &&
-      (!term || row.name.toLowerCase().includes(term) || row.email.toLowerCase().includes(term))
-    );
-  });
+  const filtered = filterRows(rows, { trailId, status, search }, now);
 
   function showStalled() {
     setStatus('stalled');
@@ -81,48 +336,7 @@ export function DashboardPage() {
     tableRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
   }
 
-  if (report.loading && !report.data) {
-    return (
-      <Loading label="Carregando o painel…" className="dash">
-        <HeaderBones action />
-        <div className="sk-stats">
-          <div className="sk-card sk-stat is-hero" />
-          {[0, 1, 2].map((item) => (
-            <div key={item} className="sk-card sk-stat">
-              <Bone w="55%" h={12} />
-              <Bone w={70} h={32} r={8} />
-              <Bone w="70%" h={11} />
-            </div>
-          ))}
-        </div>
-        <div className="sk-split">
-          <div className="sk-card sk-pad">
-            <Bone w={120} h={16} />
-            {[0, 1, 2, 3].map((item) => (
-              <div key={item} className="sk-bar-row">
-                <Bone w="40%" h={13} />
-                <Bone h={8} r={4} />
-                <Bone w={36} h={13} />
-              </div>
-            ))}
-          </div>
-          <div className="sk-card sk-pad">
-            <Bone w={160} h={16} />
-            {[0, 1, 2].map((item) => (
-              <div key={item} className="sk-person">
-                <Bone w={32} h={32} r={9} />
-                <div className="sk-row-text">
-                  <Bone w="50%" h={13} />
-                  <Bone w="70%" h={10} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <TableBones rows={5} />
-      </Loading>
-    );
-  }
+  if (report.loading && !report.data) return <DashboardLoading />;
 
   return (
     <section className="dash">
@@ -144,128 +358,13 @@ export function DashboardPage() {
 
       <FormAlert message={report.error ?? exporting.error} />
 
-      {report.data && rows.length === 0 ? (
-        <div className="my-trails-empty">
-          <div className="my-trails-empty-art" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-            <ChartIcon />
-          </div>
-          <h2>Ainda não há o que acompanhar</h2>
-          <p>
-            O painel mostra as pessoas dos cargos atribuídos a trilhas publicadas. <Link to="/trilhas">Publique uma trilha</Link> e
-            atribua cargos a ela.
-          </p>
-        </div>
-      ) : report.data ? (
+      {report.data && rows.length === 0 ? <NothingToTrack /> : null}
+      {report.data && rows.length > 0 ? (
         <>
-          <dl className="dash-stats">
-            <div className="dash-stat is-hero">
-              <dt>Progresso médio</dt>
-              <dd>{stats.averagePercent}%</dd>
-              <span className="dash-stat-hint">
-                em {stats.trails} {stats.trails === 1 ? 'trilha publicada' : 'trilhas publicadas'}
-              </span>
-              <Ring percent={stats.averagePercent} />
-            </div>
-            <div className="dash-stat">
-              <span className="dash-stat-icon" aria-hidden="true">
-                <UsersIcon />
-              </span>
-              <dt>Pessoas em onboarding</dt>
-              <dd>{stats.people}</dd>
-              <span className="dash-stat-hint">com pelo menos uma trilha</span>
-            </div>
-            <div className="dash-stat">
-              <span className="dash-stat-icon" aria-hidden="true">
-                <CheckIcon />
-              </span>
-              <dt>Trilhas concluídas</dt>
-              <dd>
-                {stats.completedAssignments}
-                <span>/{stats.assignments}</span>
-              </dd>
-              <span className="dash-stat-hint">trilhas atribuídas já finalizadas</span>
-            </div>
-            <div className={stats.stalled ? 'dash-stat is-alert' : 'dash-stat'}>
-              <span className="dash-stat-icon" aria-hidden="true">
-                <ClockIcon />
-              </span>
-              <dt>Paradas há 7+ dias</dt>
-              <dd>{stats.stalled}</dd>
-              <span className="dash-stat-hint">sem avançar nenhum passo</span>
-            </div>
-          </dl>
-
+          <StatCards stats={stats} />
           <div className="dash-split">
-            <section className="dash-card" aria-labelledby="por-trilha">
-              <header className="dash-card-head">
-                <h2 id="por-trilha">Por trilha</h2>
-                <span>Clique para filtrar a tabela</span>
-              </header>
-              <ul className="dash-trails">
-                {trails.map((trail) => {
-                  const selected = trailId === trail.trailId;
-                  return (
-                    <li key={trail.trailId}>
-                      <button
-                        type="button"
-                        className={selected ? 'dash-trail is-selected' : 'dash-trail'}
-                        aria-pressed={selected}
-                        onClick={() => setTrailId(selected ? '' : trail.trailId)}
-                      >
-                        <span className="dash-trail-title">{trail.title}</span>
-                        <span className="dash-trail-bar">
-                          <ProgressBar percent={trail.averagePercent} label={`Progresso médio em ${trail.title}`} />
-                        </span>
-                        <span className="dash-trail-percent">{trail.averagePercent}%</span>
-                        <span className="dash-trail-meta">
-                          {trail.completed} de {trail.assigned} {trail.assigned === 1 ? 'pessoa concluiu' : 'pessoas concluíram'}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-
-            <section className="dash-card" aria-labelledby="atencao">
-              <header className="dash-card-head">
-                <h2 id="atencao">Precisam de atenção</h2>
-                {stats.stalled ? (
-                  <button type="button" className="dash-link" onClick={showStalled}>
-                    Ver {stats.stalled === 1 ? 'a pessoa' : `as ${stats.stalled}`}
-                    <ArrowRightIcon />
-                  </button>
-                ) : null}
-              </header>
-              {attention.length ? (
-                <ul className="dash-attention">
-                  {attention.map((row) => (
-                    <li key={`${row.trailId}-${row.userId}`}>
-                      <span className="dash-attention-icon" aria-hidden="true">
-                        <AlertIcon />
-                      </span>
-                      <span className="dash-attention-text">
-                        <strong>{row.name}</strong>
-                        <span>
-                          {row.trailTitle} · {row.percent}%
-                        </span>
-                      </span>
-                      <span className="dash-attention-idle">{idleText(row, now)}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="dash-all-good">
-                  <span aria-hidden="true">
-                    <CheckIcon />
-                  </span>
-                  <p>Ninguém parado há mais de 7 dias. Todo mundo está avançando.</p>
-                </div>
-              )}
-            </section>
+            <TrailBreakdown trails={trails} trailId={trailId} setTrailId={setTrailId} />
+            <AttentionCard attention={attention} stalled={stats.stalled} now={now} showStalled={showStalled} />
           </div>
 
           <section ref={tableRef} className="dash-card dash-people" aria-labelledby="por-pessoa">
@@ -309,51 +408,7 @@ export function DashboardPage() {
               </select>
             </div>
 
-            {filtered.length ? (
-              <div className="table-wrap">
-                <table className="dash-table">
-                  <thead>
-                    <tr>
-                      <th>Pessoa</th>
-                      <th>Trilha</th>
-                      <th>Progresso</th>
-                      <th>Última atividade</th>
-                      <th>Situação</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((row) => {
-                      const rowStatus = statusOf(row);
-                      const stalled = isStalled(row, now);
-                      return (
-                        <tr key={`${row.trailId}-${row.userId}`}>
-                          <td>
-                            <strong>{row.name}</strong>
-                            <span className="dash-sub">{row.jobRoleName ?? row.email}</span>
-                          </td>
-                          <td>{row.trailTitle}</td>
-                          <td className="dash-progress">
-                            <ProgressBar percent={row.percent} label={`Progresso de ${row.name} em ${row.trailTitle}`} />
-                            <span>
-                              {row.completedSteps}/{row.totalSteps} · {row.percent}%
-                            </span>
-                          </td>
-                          <td className={stalled ? 'dash-idle is-stalled' : 'dash-idle'}>{relativeDate(row.lastActivityAt)}</td>
-                          <td>
-                            <span className={`badge progress-${rowStatus}`}>{progressStatusLabels[rowStatus]}</span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="dash-none">
-                <strong>Ninguém encontrado</strong>
-                <p>Ajuste a busca ou os filtros.</p>
-              </div>
-            )}
+            <PeopleTable filtered={filtered} now={now} />
           </section>
         </>
       ) : null}

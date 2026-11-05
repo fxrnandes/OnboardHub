@@ -220,11 +220,12 @@ export class TrailService {
     const current = await this.trails.findStep(companyId, id);
     if (!current) throw stepNotFound();
     const switchedToUrl = changes.url != null && changes.mediaId === undefined;
+    const keptMedia = changes.mediaId === undefined ? current.media_id : changes.mediaId;
     const content = normalizeContent(
       changes.kind ?? current.kind,
       changes.body === undefined ? current.body : changes.body,
       changes.url === undefined ? current.url : changes.url,
-      switchedToUrl ? null : changes.mediaId === undefined ? current.media_id : changes.mediaId,
+      switchedToUrl ? null : keptMedia,
     );
     await this.checkMedia(companyId, content);
     const step = await this.trails.updateStep(id, changes.title ?? current.title, content);

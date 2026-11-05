@@ -33,7 +33,7 @@ interface StepFormProps {
   compact?: boolean;
 }
 
-export function StepForm({ step, onSave, onCancel, compact }: StepFormProps) {
+export function StepForm({ step, onSave, onCancel, compact }: Readonly<StepFormProps>) {
   const kindGroup = useId();
   const [form, setForm] = useState({
     title: step?.title ?? '',
@@ -100,14 +100,14 @@ export function StepForm({ step, onSave, onCancel, compact }: StepFormProps) {
         </div>
       </div>
       {hasMedia ? (
-        <div className="segmented source-switch" role="group" aria-label="Origem do conteúdo">
+        <fieldset className="segmented source-switch" aria-label="Origem do conteúdo">
           <button type="button" aria-pressed={source === 'upload'} onClick={() => setSource('upload')}>
             Enviar arquivo
           </button>
           <button type="button" aria-pressed={source === 'url'} onClick={() => setSource('url')}>
             Usar link
           </button>
-        </div>
+        </fieldset>
       ) : null}
       {usesUpload ? (
         <MediaPicker

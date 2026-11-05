@@ -10,7 +10,32 @@ import { TrashIcon } from '../layout/icons';
 
 const people = (count: number) => (count === 1 ? '1 outra pessoa' : `${count} outras pessoas`);
 
-export function DeleteAccountSection({ companyName }: { companyName: string }) {
+function confirmLabelOf(plan: AccountDeletion, pending: boolean) {
+  if (pending) return 'Excluindo…';
+  return plan.deletesCompany ? 'Excluir conta e empresa' : 'Excluir conta';
+}
+
+function Consequences({ plan, companyName }: Readonly<{ plan: AccountDeletion; companyName: string }>) {
+  if (!plan.deletesCompany) {
+    return <>Seu nome, e-mail e progresso nas trilhas serão apagados. As trilhas e o restante da empresa continuam como estão.</>;
+  }
+  return (
+    <>
+      Você é o único administrador de <strong>{companyName}</strong>. Excluir a sua conta exclui também a empresa
+      {plan.otherMembers ? <>, {people(plan.otherMembers)},</> : null} as trilhas, os arquivos enviados e todo o
+      progresso registrado.
+    </>
+  );
+}
+
+function isPasswordProblem(requestError: unknown): requestError is ApiError {
+  return (
+    requestError instanceof ApiError &&
+    (requestError.code === 'wrong_password' || requestError.details.some((detail) => detail.field === 'password'))
+  );
+}
+
+export function DeleteAccountSection({ companyName }: Readonly<{ companyName: string }>) {
   const { logout } = useAuth();
   const [plan, setPlan] = useState<AccountDeletion | null>(null);
   const [open, setOpen] = useState(false);
@@ -28,8 +53,8 @@ export function DeleteAccountSection({ companyName }: { companyName: string }) {
       setPassword('');
       setPasswordError(undefined);
       setOpen(true);
-    } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Não foi possível continuar.');
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError.message : 'Não foi possível continuar.');
     } finally {
       setLoading(false);
     }
@@ -43,25 +68,15 @@ export function DeleteAccountSection({ companyName }: { companyName: string }) {
     try {
       await authApi.deleteAccount(password, plan.deletesCompany);
       logout(plan.deletesCompany ? 'Sua conta e a empresa foram excluídas.' : 'Sua conta foi excluída.');
-    } catch (caught) {
-      if (caught instanceof ApiError && (caught.code === 'wrong_password' || caught.details.some((d) => d.field === 'password'))) {
-        setPasswordError(caught.code === 'wrong_password' ? caught.message : 'Informe a sua senha.');
+    } catch (requestError) {
+      if (isPasswordProblem(requestError)) {
+        setPasswordError(requestError.code === 'wrong_password' ? requestError.message : 'Informe a sua senha.');
       } else {
-        setError(caught instanceof ApiError ? caught.message : 'Não foi possível excluir a conta.');
+        setError(requestError instanceof ApiError ? requestError.message : 'Não foi possível excluir a conta.');
       }
       setPending(false);
     }
   }
-
-  const description = plan?.deletesCompany ? (
-    <>
-      Você é o único administrador de <strong>{companyName}</strong>. Excluir a sua conta exclui também a empresa
-      {plan.otherMembers ? <>, {people(plan.otherMembers)},</> : null} as trilhas, os arquivos enviados e todo o
-      progresso registrado.
-    </>
-  ) : (
-    <>Seu nome, e-mail e progresso nas trilhas serão apagados. As trilhas e o restante da empresa continuam como estão.</>
-  );
 
   return (
     <section className="settings-section danger-zone" aria-labelledby="perfil-excluir">
@@ -82,8 +97,8 @@ export function DeleteAccountSection({ companyName }: { companyName: string }) {
       {open && plan ? (
         <ConfirmDialog
           title={plan.deletesCompany ? 'Excluir sua conta e a empresa?' : 'Excluir sua conta?'}
-          description={description}
-          confirmLabel={pending ? 'Excluindo…' : plan.deletesCompany ? 'Excluir conta e empresa' : 'Excluir conta'}
+          description={<Consequences plan={plan} companyName={companyName} />}
+          confirmLabel={confirmLabelOf(plan, pending)}
           onConfirm={confirm}
           onClose={() => setOpen(false)}
           ready={password.length > 0}

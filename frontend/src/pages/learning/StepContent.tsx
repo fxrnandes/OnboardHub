@@ -1,15 +1,22 @@
 import { isVideoFile, videoEmbedUrl, type LearnerStep } from '../../api/learning';
 import { ExternalIcon, LinkIcon, PlayIcon } from '../../layout/icons';
 
-function Paragraphs({ text }: { text: string }) {
+function withKeys(paragraphs: string[]) {
+  const seen = new Map<string, number>();
+  return paragraphs.map((text) => {
+    const count = (seen.get(text) ?? 0) + 1;
+    seen.set(text, count);
+    return { text, key: `${count}:${text}` };
+  });
+}
+
+function Paragraphs({ text }: Readonly<{ text: string }>) {
+  const paragraphs = text.split(/\n{2,}/).filter((paragraph) => paragraph.trim());
   return (
     <div className="step-body">
-      {text
-        .split(/\n{2,}/)
-        .filter((paragraph) => paragraph.trim())
-        .map((paragraph, index) => (
-          <p key={index}>{paragraph}</p>
-        ))}
+      {withKeys(paragraphs).map((paragraph) => (
+        <p key={paragraph.key}>{paragraph.text}</p>
+      ))}
     </div>
   );
 }
@@ -22,7 +29,7 @@ function hostOf(url: string) {
   }
 }
 
-function ExternalCard({ url, title, action, kind }: { url: string; title: string; action: string; kind: 'link' | 'video' }) {
+function ExternalCard({ url, title, action, kind }: Readonly<{ url: string; title: string; action: string; kind: 'link' | 'video' }>) {
   return (
     <div className="step-external">
       <span className="step-external-icon" aria-hidden="true">
@@ -40,29 +47,43 @@ function ExternalCard({ url, title, action, kind }: { url: string; title: string
   );
 }
 
-export function StepContent({ step }: { step: LearnerStep }) {
+function VideoContent({ step, url }: Readonly<{ step: LearnerStep; url: string }>) {
+  if (step.media) {
+    return (
+      <video className="video-file" src={step.media.url} controls preload="metadata" aria-label={step.title}>
+        <track kind="captions" />
+      </video>
+    );
+  }
+  const embed = videoEmbedUrl(url);
+  if (embed) {
+    return (
+      <div className="video-frame">
+        <iframe
+          src={embed}
+          title={step.title}
+          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+          allowFullScreen
+        />
+      </div>
+    );
+  }
+  if (isVideoFile(url)) {
+    return (
+      <video className="video-file" src={url} controls aria-label={step.title}>
+        <track kind="captions" />
+      </video>
+    );
+  }
+  return <ExternalCard url={url} title="Este vídeo abre em outra aba" action="Assistir o vídeo" kind="video" />;
+}
+
+export function StepContent({ step }: Readonly<{ step: LearnerStep }>) {
   const url = step.url ?? '';
 
   return (
     <div className="step-content">
-      {step.kind === 'video' ? (
-        step.media ? (
-          <video className="video-file" src={step.media.url} controls preload="metadata" aria-label={step.title} />
-        ) : videoEmbedUrl(url) ? (
-          <div className="video-frame">
-            <iframe
-              src={videoEmbedUrl(url)!}
-              title={step.title}
-              allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-              allowFullScreen
-            />
-          </div>
-        ) : isVideoFile(url) ? (
-          <video className="video-file" src={url} controls aria-label={step.title} />
-        ) : (
-          <ExternalCard url={url} title="Este vídeo abre em outra aba" action="Assistir o vídeo" kind="video" />
-        )
-      ) : null}
+      {step.kind === 'video' ? <VideoContent step={step} url={url} /> : null}
 
       {step.kind === 'image' ? (
         <figure className="step-figure">

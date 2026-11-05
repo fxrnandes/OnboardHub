@@ -16,8 +16,9 @@ interface Transport {
 }
 
 export class LogMailer implements Mailer {
-  async send({ to, subject, text }: MailMessage): Promise<void> {
+  send({ to, subject, text }: MailMessage): Promise<void> {
     console.info(`[e-mail] Para: ${to}\nAssunto: ${subject}\n\n${text}`);
+    return Promise.resolve();
   }
 }
 

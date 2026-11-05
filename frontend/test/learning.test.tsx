@@ -48,7 +48,7 @@ describe('minhas trilhas', () => {
     expect(screen.getByRole('link', { name: 'Continuar' })).toHaveAttribute('href', '/minhas-trilhas/t2');
     expect(screen.getByRole('link', { name: 'Rever trilha' })).toBeInTheDocument();
     expect(screen.getByText('2 de 4 passos · 50%')).toBeInTheDocument();
-    expect(screen.getByRole('progressbar', { name: 'Progresso em Ferramentas' })).toHaveAttribute('aria-valuenow', '50');
+    expect(screen.getByRole('progressbar', { name: 'Progresso em Ferramentas' })).toHaveAttribute('value', '50');
     expect(screen.getByText('Concluída')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Equipe' })).not.toBeInTheDocument();
   });

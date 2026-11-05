@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { TrashIcon } from '../layout/icons';
 
@@ -26,7 +26,7 @@ export function ConfirmDialog({
   ready = true,
   pending = false,
   closeOnConfirm = true,
-}: {
+}: Readonly<{
   title: string;
   description?: ReactNode;
   confirmLabel: string;
@@ -36,9 +36,10 @@ export function ConfirmDialog({
   ready?: boolean;
   pending?: boolean;
   closeOnConfirm?: boolean;
-}) {
+}>) {
   const [checked, setChecked] = useState(false);
-  const dialog = useRef<HTMLDivElement>(null);
+  const backdrop = useRef<HTMLDivElement>(null);
+  const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const descriptionId = useId();
 
@@ -48,35 +49,51 @@ export function ConfirmDialog({
     return () => previous?.focus?.();
   }, []);
 
-  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.key === 'Escape') {
-      event.stopPropagation();
-      if (!pending) onClose();
-      return;
+  useEffect(() => {
+    const node = dialog.current;
+    const overlay = backdrop.current;
+    if (!node || !overlay) return;
+
+    function trapFocus(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.stopPropagation();
+        if (!pending) onClose();
+        return;
+      }
+      if (event.key !== 'Tab' || !node) return;
+      const items = Array.from(node.querySelectorAll<HTMLElement>(focusable));
+      const first = items[0];
+      const last = items.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
     }
-    if (event.key !== 'Tab' || !dialog.current) return;
-    const items = Array.from(dialog.current.querySelectorAll<HTMLElement>(focusable));
-    const first = items[0];
-    const last = items[items.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last?.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first?.focus();
+
+    function closeFromOutside(event: MouseEvent) {
+      if (event.target === overlay && !pending) onClose();
     }
-  }
+
+    node.addEventListener('keydown', trapFocus);
+    overlay.addEventListener('mousedown', closeFromOutside);
+    return () => {
+      node.removeEventListener('keydown', trapFocus);
+      overlay.removeEventListener('mousedown', closeFromOutside);
+    };
+  }, [pending, onClose]);
 
   return createPortal(
-    <div className="dialog-backdrop" onMouseDown={(event) => event.target === event.currentTarget && !pending && onClose()}>
-      <div
+    <div ref={backdrop} className="dialog-backdrop">
+      <dialog
         ref={dialog}
+        open
         className="dialog"
-        role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
-        onKeyDown={handleKeyDown}
       >
         <span className="dialog-icon" aria-hidden="true">
           <TrashIcon />
@@ -108,7 +125,7 @@ export function ConfirmDialog({
             {confirmLabel}
           </button>
         </footer>
-      </div>
+      </dialog>
     </div>,
     document.body,
   );
@@ -124,7 +141,7 @@ export function ConfirmButton({
   icon,
   triggerLabel,
   className,
-}: ConfirmButtonProps) {
+}: Readonly<ConfirmButtonProps>) {
   const [open, setOpen] = useState(false);
 
   return (

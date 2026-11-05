@@ -1,14 +1,10 @@
-export function ProgressBar({ percent, label }: { percent: number; label: string }) {
+export function ProgressBar({ percent, label }: Readonly<{ percent: number; label: string }>) {
   return (
-    <div
-      className="progress"
-      role="progressbar"
-      aria-label={label}
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={percent}
-    >
-      <div className="progress-fill" style={{ width: `${percent}%` }} />
-    </div>
+    <>
+      <progress className="visually-hidden" value={percent} max={100} aria-label={label} />
+      <div className="progress" aria-hidden="true">
+        <div className="progress-fill" style={{ width: `${percent}%` }} />
+      </div>
+    </>
   );
 }

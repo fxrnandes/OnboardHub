@@ -12,7 +12,7 @@ function LockIcon() {
   );
 }
 
-export function AuthLayout({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
+export function AuthLayout({ title, subtitle, children }: Readonly<{ title: string; subtitle?: string; children: ReactNode }>) {
   return (
     <div className="auth-screen">
       <main className="auth-main">

@@ -11,8 +11,8 @@ export function useAction() {
     try {
       await action();
       return true;
-    } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Algo deu errado. Tente novamente.');
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError.message : 'Algo deu errado. Tente novamente.');
       return false;
     } finally {
       setPending(false);

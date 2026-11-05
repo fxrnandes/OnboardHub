@@ -63,14 +63,14 @@ export function MembersTab() {
     <div className="team-panel">
       <FormAlert message={action.error} />
       <div className="team-toolbar">
-        <div className="segmented" role="group" aria-label="Filtrar por papel">
+        <fieldset className="segmented" aria-label="Filtrar por papel">
           {(['all', ...roles] as const).map((role) => (
             <button key={role} type="button" aria-pressed={roleFilter === role} onClick={() => setRoleFilter(role)}>
               {role === 'all' ? 'Todas' : roleLabels[role]}
               <span className="segmented-count">{count(role)}</span>
             </button>
           ))}
-        </div>
+        </fieldset>
         <label className="dash-search team-search">
           <SearchIcon />
           <input

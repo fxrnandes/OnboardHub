@@ -35,7 +35,7 @@ describe('início', () => {
     const hero = await screen.findByRole('region', { name: 'Continue de onde parou' });
     expect(within(hero).getByText('Ferramentas')).toBeInTheDocument();
     expect(within(hero).getByText('3 de 4 passos')).toBeInTheDocument();
-    expect(within(hero).getByRole('progressbar', { name: 'Progresso em Ferramentas' })).toHaveAttribute('aria-valuenow', '75');
+    expect(within(hero).getByRole('progressbar', { name: 'Progresso em Ferramentas' })).toHaveAttribute('value', '75');
     expect(within(hero).getByRole('link', { name: 'Continuar' })).toHaveAttribute('href', '/minhas-trilhas/t2');
     expect(screen.getByText('1 de 3 trilhas concluídas')).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Visão da equipe' })).not.toBeInTheDocument();

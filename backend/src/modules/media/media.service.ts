@@ -160,11 +160,13 @@ export class MediaService {
   }
 
   async release(companyId: string, ids: (string | null)[]): Promise<void> {
-    for (const id of new Set(ids)) {
-      if (!id) continue;
-      const key = await this.media.deleteIfUnused(companyId, id);
-      if (key) await this.storage.delete(key).catch(() => undefined);
-    }
+    const unique = [...new Set(ids)].filter((id): id is string => Boolean(id));
+    await Promise.all(
+      unique.map(async (id) => {
+        const key = await this.media.deleteIfUnused(companyId, id);
+        if (key) await this.storage.delete(key).catch(() => undefined);
+      }),
+    );
   }
 
   async keysOf(companyId: string): Promise<string[]> {

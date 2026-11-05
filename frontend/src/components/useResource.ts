@@ -11,8 +11,8 @@ export function useResource<T>(load: () => Promise<T>) {
     try {
       setData(await load());
       setError(null);
-    } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Não foi possível carregar os dados.');
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError.message : 'Não foi possível carregar os dados.');
     } finally {
       setLoading(false);
     }

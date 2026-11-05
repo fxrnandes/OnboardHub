@@ -33,6 +33,59 @@ function saveView(trailId: string, view: EditorView) {
   }
 }
 
+function EditorLoading() {
+  return (
+    <Loading label="Carregando trilha…" className="editor">
+      <Bone w={70} h={12} />
+      <HeaderBones action />
+      <div className="editor-grid">
+        <div className="module-stack">
+          {[4, 3].map((count, moduleIndex) => (
+            <div key={moduleIndex} className="sk-card sk-module">
+              <div className="sk-person sk-module-head">
+                <Bone w={34} h={34} r={10} />
+                <div className="sk-row-text">
+                  <Bone w={90} h={10} />
+                  <Bone w="40%" h={15} />
+                </div>
+              </div>
+              {Array.from({ length: count }, (_, item) => (
+                <div key={item} className="sk-person sk-step">
+                  <Bone w={36} h={36} r={10} />
+                  <div className="sk-row-text">
+                    <Bone w={`${55 - item * 7}%`} h={13} />
+                    <Bone w="35%" h={10} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div className="editor-side">
+          {[150, 190, 130].map((height, index) => (
+            <div key={index} className="sk-card sk-pad" style={{ minHeight: height }}>
+              <Bone w={110} h={15} />
+              <Bone h={40} r={10} />
+              <Bone w="70%" h={11} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </Loading>
+  );
+}
+
+function summaryOf(modules: number, steps: number, roleNames: string[]) {
+  const moduleText = modules === 1 ? '1 módulo' : `${modules} módulos`;
+  const stepText = steps === 1 ? '1 passo' : `${steps} passos`;
+  const roleText = roleNames.length ? `para ${roleNames.join(', ')}` : 'sem cargo definido';
+  return `${moduleText} · ${stepText} · ${roleText}`;
+}
+
+function toggled(ids: string[], id: string, checked: boolean) {
+  return checked ? [...ids, id] : ids.filter((existing) => existing !== id);
+}
+
 export function TrailEditorPage() {
   const { id = '' } = useParams();
   const loadTrail = useCallback(() => trailsApi.get(id), [id]);
@@ -71,45 +124,7 @@ export function TrailEditorPage() {
   });
 
   if (trail.loading && !trail.data) {
-    return (
-      <Loading label="Carregando trilha…" className="editor">
-        <Bone w={70} h={12} />
-        <HeaderBones action />
-        <div className="editor-grid">
-          <div className="module-stack">
-            {[4, 3].map((count, moduleIndex) => (
-              <div key={moduleIndex} className="sk-card sk-module">
-                <div className="sk-person sk-module-head">
-                  <Bone w={34} h={34} r={10} />
-                  <div className="sk-row-text">
-                    <Bone w={90} h={10} />
-                    <Bone w="40%" h={15} />
-                  </div>
-                </div>
-                {Array.from({ length: count }, (_, item) => (
-                  <div key={item} className="sk-person sk-step">
-                    <Bone w={36} h={36} r={10} />
-                    <div className="sk-row-text">
-                      <Bone w={`${55 - item * 7}%`} h={13} />
-                      <Bone w="35%" h={10} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-          <div className="editor-side">
-            {[150, 190, 130].map((height, index) => (
-              <div key={index} className="sk-card sk-pad" style={{ minHeight: height }}>
-                <Bone w={110} h={15} />
-                <Bone h={40} r={10} />
-                <Bone w="70%" h={11} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </Loading>
-    );
+    return <EditorLoading />;
   }
   if (!trail.data) {
     return (
@@ -139,9 +154,7 @@ export function TrailEditorPage() {
   }
 
   async function toggleJobRole(jobRoleId: string, checked: boolean) {
-    const next = checked
-      ? [...current.jobRoleIds, jobRoleId]
-      : current.jobRoleIds.filter((existing) => existing !== jobRoleId);
+    const next = toggled(current.jobRoleIds, jobRoleId, checked);
     trail.setData({ ...current, jobRoleIds: next });
     const ok = await run(() => trailsApi.setJobRoles(id, next));
     if (!ok) trail.setData(current);
@@ -177,11 +190,7 @@ export function TrailEditorPage() {
         <div className="editor-head-text">
           <span className={`status-chip is-${current.status}`}>{trailStatusLabels[current.status]}</span>
           <h1>{current.title}</h1>
-          <p>
-            {current.modules.length === 1 ? '1 módulo' : `${current.modules.length} módulos`} ·{' '}
-            {stepTotal === 1 ? '1 passo' : `${stepTotal} passos`}
-            {roleNames.length ? ` · para ${roleNames.join(', ')}` : ' · sem cargo definido'}
-          </p>
+          <p>{summaryOf(current.modules.length, stepTotal, roleNames)}</p>
         </div>
         <button
           type="button"
@@ -195,17 +204,17 @@ export function TrailEditorPage() {
 
       <FormAlert message={action.error} />
       {warnings.map((warning) => (
-        <div key={warning} className="form-warning" role="status">
+        <output key={warning} className="form-warning">
           <AlertIcon />
           {warning}
-        </div>
+        </output>
       ))}
 
       <div className={view === 'flow' ? 'editor-grid is-flow' : 'editor-grid'}>
         <section aria-labelledby="modulos-title" className="editor-content">
           <div className="editor-content-head">
             <h2 id="modulos-title">Módulos e passos</h2>
-            <div className="segmented" role="group" aria-label="Modo de edição">
+            <fieldset className="segmented" aria-label="Modo de edição">
               <button type="button" aria-pressed={view === 'list'} onClick={() => changeView('list')}>
                 <ListIcon />
                 Lista
@@ -214,7 +223,7 @@ export function TrailEditorPage() {
                 <FlowIcon />
                 Fluxo
               </button>
-            </div>
+            </fieldset>
           </div>
           {view === 'flow' ? (
             <FlowView trail={current} busy={action.pending} run={run} />

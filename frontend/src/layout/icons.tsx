@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-function Icon({ children }: { children: ReactNode }) {
+function Icon({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <svg className="icon" viewBox="0 0 24 24" aria-hidden="true">
       {children}

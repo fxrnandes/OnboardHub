@@ -11,8 +11,8 @@ export function useSubmit(action: () => Promise<void>) {
     setError(null);
     try {
       await action();
-    } catch (caught) {
-      setError(caught instanceof ApiError ? caught : new ApiError(0, 'unknown_error', 'Algo deu errado. Tente novamente.'));
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError : new ApiError(0, 'unknown_error', 'Algo deu errado. Tente novamente.'));
     } finally {
       setPending(false);
     }
@@ -23,6 +23,6 @@ export function useSubmit(action: () => Promise<void>) {
     error,
     onSubmit,
     fieldError: (field: string) => error?.fieldMessage(field),
-    formError: error && error.details.length === 0 ? error.message : null,
+    formError: error?.details.length === 0 ? error.message : null,
   };
 }

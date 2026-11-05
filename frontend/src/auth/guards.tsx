@@ -4,7 +4,7 @@ import type { Role } from '../api/auth';
 import { useAuth } from './AuthContext';
 import { AppSplash } from '../components/Skeleton';
 
-export function RequireAuth({ children, roles }: { children: ReactNode; roles?: Role[] }) {
+export function RequireAuth({ children, roles }: Readonly<{ children: ReactNode; roles?: Role[] }>) {
   const { status, session } = useAuth();
   const location = useLocation();
 
@@ -15,7 +15,7 @@ export function RequireAuth({ children, roles }: { children: ReactNode; roles?: 
   return <>{children}</>;
 }
 
-export function GuestOnly({ children }: { children: ReactNode }) {
+export function GuestOnly({ children }: Readonly<{ children: ReactNode }>) {
   const { status } = useAuth();
   if (status === 'loading') return <AppSplash />;
   if (status === 'authenticated') return <Navigate to="/" replace />;

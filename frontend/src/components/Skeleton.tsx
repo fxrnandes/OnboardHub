@@ -1,12 +1,12 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { LogoMark } from '../layout/Logo';
 
-export function Bone({ w, h = 12, r, className }: { w?: number | string; h?: number; r?: number; className?: string }) {
+export function Bone({ w, h = 12, r, className }: Readonly<{ w?: number | string; h?: number; r?: number; className?: string }>) {
   const style: CSSProperties = { width: w ?? '100%', height: h, borderRadius: r ?? Math.min(8, h / 2) };
   return <span className={className ? `bone ${className}` : 'bone'} style={style} />;
 }
 
-export function Loading({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
+export function Loading({ label, children, className }: Readonly<{ label: string; children: ReactNode; className?: string }>) {
   return (
     <div className={className ? `skeleton ${className}` : 'skeleton'} role="status" aria-live="polite" aria-busy="true">
       <span className="visually-hidden">{label}</span>
@@ -15,7 +15,7 @@ export function Loading({ label, children, className }: { label: string; childre
   );
 }
 
-export function HeaderBones({ action }: { action?: boolean }) {
+export function HeaderBones({ action }: Readonly<{ action?: boolean }>) {
   return (
     <div className="sk-head">
       <div>
@@ -27,7 +27,7 @@ export function HeaderBones({ action }: { action?: boolean }) {
   );
 }
 
-export function RowBones({ rows = 4, icon = 48 }: { rows?: number; icon?: number }) {
+export function RowBones({ rows = 4, icon = 48 }: Readonly<{ rows?: number; icon?: number }>) {
   return (
     <div className="sk-card sk-rows">
       {Array.from({ length: rows }, (_, index) => (
@@ -48,7 +48,7 @@ export function RowBones({ rows = 4, icon = 48 }: { rows?: number; icon?: number
   );
 }
 
-export function TableBones({ rows = 6 }: { rows?: number }) {
+export function TableBones({ rows = 6 }: Readonly<{ rows?: number }>) {
   return (
     <div className="sk-card sk-table">
       <div className="sk-table-head">

@@ -3,7 +3,7 @@ import { ImageIcon, LinkIcon, PlayIcon, TextIcon } from '../../layout/icons';
 
 const kindIcons = { text: TextIcon, link: LinkIcon, video: PlayIcon, image: ImageIcon };
 
-export function KindIcon({ kind }: { kind: StepKind }) {
+export function KindIcon({ kind }: Readonly<{ kind: StepKind }>) {
   const Icon = kindIcons[kind];
   return <Icon />;
 }

@@ -12,13 +12,21 @@ const dateTime = new Intl.DateTimeFormat('pt-BR', {
 
 export const formatDateTime = (date: Date) => dateTime.format(date).replace(', ', ' ');
 
-export function csvCell(value: unknown): string {
-  const text = value == null ? '' : value instanceof Date ? formatDateTime(value) : String(value);
-  const safe = FORMULA_START.test(text) ? `'${text}` : text;
-  return /[";\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+export type CsvValue = string | number | boolean | Date | null | undefined;
+
+function textOf(value: CsvValue): string {
+  if (value == null) return '';
+  if (value instanceof Date) return formatDateTime(value);
+  return String(value);
 }
 
-export function toCsv(header: string[], rows: unknown[][]): string {
+export function csvCell(value: CsvValue): string {
+  const text = textOf(value);
+  const safe = FORMULA_START.test(text) ? `'${text}` : text;
+  return /[";\n\r]/.test(safe) ? `"${safe.replaceAll('"', '""')}"` : safe;
+}
+
+export function toCsv(header: string[], rows: CsvValue[][]): string {
   const lines = [header, ...rows].map((row) => row.map(csvCell).join(';'));
   return `﻿${lines.join('\r\n')}\r\n`;
 }

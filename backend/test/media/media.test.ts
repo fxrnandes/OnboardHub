@@ -57,7 +57,7 @@ describe('upload de mídia (RF09)', () => {
     const file = await fetchFile(res.body.media.url);
     expect(file.status).toBe(200);
     expect(file.headers['content-type']).toBe('image/png');
-    expect(file.body.length).toBe(200);
+    expect(file.body).toHaveLength(200);
   });
 
   it('confere o formato pelo conteúdo, não pelo nome', async () => {

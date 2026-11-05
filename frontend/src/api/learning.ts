@@ -63,12 +63,12 @@ export function videoEmbedUrl(url: string): string | null {
   }
   if (host === 'youtube.com' || host === 'youtube-nocookie.com') {
     const fromQuery = parsed.searchParams.get('v');
-    const fromPath = parsed.pathname.match(/^\/(?:embed|shorts|live)\/([^/?]+)/)?.[1];
+    const fromPath = /^\/(?:embed|shorts|live)\/([^/?]+)/.exec(parsed.pathname)?.[1];
     const id = fromQuery ?? fromPath;
     return id ? `https://www.youtube-nocookie.com/embed/${id}` : null;
   }
   if (host === 'vimeo.com' || host === 'player.vimeo.com') {
-    const id = parsed.pathname.match(/(\d+)/)?.[1];
+    const id = /(\d+)/.exec(parsed.pathname)?.[1];
     return id ? `https://player.vimeo.com/video/${id}` : null;
   }
   return null;

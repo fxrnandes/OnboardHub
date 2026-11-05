@@ -65,9 +65,9 @@ export class LocalDiskStorage implements MediaStorage {
     await rm(this.pathFor(key), { force: true });
   }
 
-  async signedUrl(key: string, ttlSeconds: number): Promise<string> {
+  signedUrl(key: string, ttlSeconds: number): Promise<string> {
     const expires = Math.floor(Date.now() / 1000) + ttlSeconds;
-    return `${this.publicPath}/media/files/${key}?expires=${expires}&signature=${this.signature(key, expires)}`;
+    return Promise.resolve(`${this.publicPath}/media/files/${key}?expires=${expires}&signature=${this.signature(key, expires)}`);
   }
 
   async open(key: string, expires: number, signature: string): Promise<{ stream: Readable; size: number } | null> {
