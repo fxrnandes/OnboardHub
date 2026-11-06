@@ -218,3 +218,15 @@ jobs:
           done
           echo "A aplicação não respondeu em https://${{ vars.API_DOMAIN }}"
           exit 1
+
+      - name: Mostrar os logs do servidor
+        if: failure()
+        uses: appleboy/ssh-action@7eaf76671a0d7eec5d98ee897acda4f968735a17 # v1.2.0
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USER }}
+          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          script: |
+            cd /opt/onboardhub
+            docker compose -f docker-compose.prod.yml ps -a
+            docker compose -f docker-compose.prod.yml logs --no-color --tail 80 api

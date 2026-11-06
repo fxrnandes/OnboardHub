@@ -53,7 +53,7 @@ export const membersApi = {
 
 export const invitesApi = {
   list: () => api.get<{ invites: Invite[] }>('/invites').then((data) => data.invites),
-  create: (input: NewInvite) => api.post<{ invite: Invite; link: string }>('/invites', input),
+  create: (input: NewInvite) => api.post<{ invite: Invite; link: string; emailSent: boolean }>('/invites', input),
   revoke: (id: string) => api.delete(`/invites/${id}`),
 };
 

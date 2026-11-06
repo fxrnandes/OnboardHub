@@ -154,6 +154,23 @@ describe('autenticação', () => {
     expect(screen.getByLabelText('CNPJ')).toHaveValue('12.ABC.345/01DE-35');
   });
 
+  it('o cadastro é da empresa e explica como entra quem foi convidado', async () => {
+    mockFetch({});
+    renderApp('/cadastro');
+
+    expect(await screen.findByRole('heading', { name: 'Cadastre sua empresa' })).toBeInTheDocument();
+    expect(screen.getByText(/Vai começar em uma empresa que já usa o OnboardHub\?/)).toHaveTextContent(
+      'peça ao seu gestor o convite',
+    );
+  });
+
+  it('o login lembra quem foi convidado de usar o convite', async () => {
+    mockFetch({});
+    renderApp('/entrar');
+
+    expect(await screen.findByText(/Recebeu um convite\?/)).toHaveTextContent('Use o link do convite para criar sua conta');
+  });
+
   it('confere os dados da primeira etapa antes de avançar', async () => {
     const { calls } = mockFetch({});
     renderApp('/cadastro');

@@ -170,18 +170,24 @@ describe('equipe: convites', () => {
       'GET /job-roles': { body: { jobRoles: [suporte] } },
       'POST /invites': {
         status: 201,
-        body: { invite: { ...pending, id: 'i2', email: 'dani@empresa.com', role: 'gestor' }, link: 'https://app/convite/xyz' },
+        body: {
+          invite: { ...pending, id: 'i2', email: 'dani@empresa.com', role: 'gestor' },
+          link: 'https://app/convite/xyz',
+          emailSent: true,
+        },
       },
     });
     renderApp('/equipe/convites');
 
     expect(await screen.findByText('Nenhum convite enviado')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Gerar link de convite' })).toBeInTheDocument();
     await userEvent.type(screen.getByLabelText('E-mail (opcional)'), 'dani@empresa.com');
     await userEvent.selectOptions(screen.getByLabelText('Papel'), 'gestor');
     await userEvent.selectOptions(screen.getByLabelText('Cargo'), 'j1');
-    await userEvent.click(screen.getByRole('button', { name: 'Gerar link de convite' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar convite por e-mail' }));
 
-    expect(await screen.findByLabelText('Link do convite')).toHaveValue('https://app/convite/xyz');
+    expect(await screen.findByText('Convite enviado para dani@empresa.com. Se quiser, copie o link também:')).toBeInTheDocument();
+    expect(screen.getByLabelText('Link do convite')).toHaveValue('https://app/convite/xyz');
     expect(calls.find((call) => call.method === 'POST')!.body).toEqual({
       email: 'dani@empresa.com',
       role: 'gestor',
@@ -198,14 +204,36 @@ describe('equipe: convites', () => {
     const { calls } = asMaster({
       'GET /invites': { body: { invites: [] } },
       'GET /job-roles': { body: { jobRoles: [] } },
-      'POST /invites': { status: 201, body: { invite: { ...pending, email: null, jobRoleName: null }, link: 'l' } },
+      'POST /invites': {
+        status: 201,
+        body: { invite: { ...pending, email: null, jobRoleName: null }, link: 'l', emailSent: false },
+      },
     });
     renderApp('/equipe/convites');
 
     await userEvent.click(await screen.findByRole('button', { name: 'Gerar link de convite' }));
     await screen.findByLabelText('Link do convite');
+    expect(screen.getByText('Convite criado. Envie este link para a pessoa:')).toBeInTheDocument();
     expect(calls.find((call) => call.method === 'POST')!.body).toEqual({ email: null, role: 'colaborador', jobRoleId: null });
     expect(screen.getByText('Link aberto')).toBeInTheDocument();
+  });
+
+  it('se o e-mail não sair, avisa e mostra o link para enviar por fora', async () => {
+    asMaster({
+      'GET /invites': { body: { invites: [] } },
+      'GET /job-roles': { body: { jobRoles: [] } },
+      'POST /invites': {
+        status: 201,
+        body: { invite: { ...pending, email: 'gil@empresa.com' }, link: 'https://app/convite/abc', emailSent: false },
+      },
+    });
+    renderApp('/equipe/convites');
+
+    await userEvent.type(await screen.findByLabelText('E-mail (opcional)'), 'gil@empresa.com');
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar convite por e-mail' }));
+
+    expect(await screen.findByText('Não conseguimos enviar o e-mail. Envie este link para a pessoa:')).toBeInTheDocument();
+    expect(screen.getByLabelText('Link do convite')).toHaveValue('https://app/convite/abc');
   });
 
   it('lista convites com status e revoga um pendente', async () => {

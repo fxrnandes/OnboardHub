@@ -7,7 +7,7 @@ import { FormAlert } from '../components/FormAlert';
 import { PasswordField } from '../components/PasswordField';
 import { SocialSignIn } from '../components/SocialSignIn';
 import { useSubmit } from '../components/useSubmit';
-import { CheckIcon } from '../layout/icons';
+import { CheckIcon, MailIcon } from '../layout/icons';
 import { AuthLayout } from '../layout/AuthLayout';
 import { isEmail } from '../components/email';
 
@@ -102,6 +102,10 @@ export function LoginPage() {
       </form>
       <p className="auth-switch">
         Não tem uma conta? <Link to="/cadastro">Cadastre sua empresa</Link>
+      </p>
+      <p className="auth-invite-note">
+        <MailIcon />
+        <span>Recebeu um convite? Use o link do convite para criar sua conta.</span>
       </p>
     </AuthLayout>
   );

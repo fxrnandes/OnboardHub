@@ -66,12 +66,12 @@ export function inviteRoutes(db: Queryable, service: InviteService, requireAuth:
 
   router.post('/', async (req, res) => {
     const input = createSchema.parse(req.body);
-    const { invite, link } = await service.create({
+    const { invite, link, emailSent } = await service.create({
       ...input,
       companyId: req.auth!.companyId,
       createdBy: req.auth!.userId,
     });
-    res.status(201).json({ invite: toResponse(invite), link });
+    res.status(201).json({ invite: toResponse(invite), link, emailSent });
   });
 
   router.delete('/:id', async (req, res) => {

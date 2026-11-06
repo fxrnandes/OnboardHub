@@ -9,6 +9,7 @@ import { PasswordField } from '../components/PasswordField';
 import { SocialSignIn } from '../components/SocialSignIn';
 import { useSubmit } from '../components/useSubmit';
 import { AuthLayout } from '../layout/AuthLayout';
+import { MailIcon } from '../layout/icons';
 import { isEmail } from '../components/email';
 
 const personFields = ['name', 'email', 'password'];
@@ -107,7 +108,7 @@ export function SignupPage() {
 
   if (step === 1) {
     return (
-      <AuthLayout title="Crie sua conta">
+      <AuthLayout title="Cadastre sua empresa" subtitle="Você cria o acesso de administrador e, depois, convida a equipe.">
         <StepIndicator step={1} />
         <SocialSignIn />
         <form ref={formRef} onSubmit={continueToCompany} noValidate>
@@ -141,6 +142,13 @@ export function SignupPage() {
         </form>
         <p className="auth-switch">
           Já tem conta? <Link to="/entrar">Entrar</Link>
+        </p>
+        <p className="auth-invite-note">
+          <MailIcon />
+          <span>
+            Vai começar em uma empresa que já usa o OnboardHub? Não precisa se cadastrar: peça ao seu gestor o convite
+            por e-mail ou link.
+          </span>
         </p>
       </AuthLayout>
     );

@@ -86,7 +86,14 @@ export class LocalDiskStorage implements MediaStorage {
 }
 
 export function createStorage(env: NodeJS.ProcessEnv, secret: string): MediaStorage {
-  const connectionString = env.AZURE_STORAGE_CONNECTION_STRING;
-  if (connectionString) return new AzureBlobStorage(connectionString, env.AZURE_STORAGE_CONTAINER ?? 'media');
-  return new LocalDiskStorage(env.MEDIA_DIR ?? join(process.cwd(), 'uploads'), secret, env.MEDIA_PUBLIC_PATH ?? '/api');
+  const local = () => new LocalDiskStorage(env.MEDIA_DIR ?? join(process.cwd(), 'uploads'), secret, env.MEDIA_PUBLIC_PATH ?? '/api');
+  const connectionString = env.AZURE_STORAGE_CONNECTION_STRING?.trim().replace(/^["']|["']$/g, '');
+  if (!connectionString) return local();
+  try {
+    return new AzureBlobStorage(connectionString, env.AZURE_STORAGE_CONTAINER || 'media');
+  } catch (error) {
+    const reason = (error as Error).message.replaceAll(connectionString, '***');
+    console.error(`AZURE_STORAGE_CONNECTION_STRING inválida (${reason}). Os arquivos serão gravados em disco.`);
+    return local();
+  }
 }

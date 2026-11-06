@@ -13,6 +13,23 @@ import { Bone, Loading, TableBones } from '../../components/Skeleton';
 
 const dateFormat = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
+interface Created {
+  link: string;
+  email: string | null;
+  emailSent: boolean;
+}
+
+function submitLabel(withEmail: boolean, pending: boolean) {
+  if (withEmail) return pending ? 'Enviando…' : 'Enviar convite por e-mail';
+  return pending ? 'Gerando…' : 'Gerar link de convite';
+}
+
+function createdMessage({ email, emailSent }: Created) {
+  if (emailSent) return `Convite enviado para ${email}. Se quiser, copie o link também:`;
+  if (email) return 'Não conseguimos enviar o e-mail. Envie este link para a pessoa:';
+  return 'Convite criado. Envie este link para a pessoa:';
+}
+
 export function InvitesTab() {
   const invites = useResource(invitesApi.list);
   const jobRoles = useResource(jobRolesApi.list);
@@ -22,7 +39,7 @@ export function InvitesTab() {
     role: 'colaborador',
     jobRoleId: '',
   });
-  const [link, setLink] = useState<string | null>(null);
+  const [created, setCreated] = useState<Created | null>(null);
   const [copied, setCopied] = useState(false);
 
   const create = useSubmit(async () => {
@@ -32,14 +49,14 @@ export function InvitesTab() {
       jobRoleId: form.jobRoleId || null,
     });
     invites.setData((list) => [result.invite, ...(list ?? [])]);
-    setLink(result.link);
+    setCreated({ link: result.link, email: result.invite.email, emailSent: result.emailSent });
     setCopied(false);
     setForm((current) => ({ ...current, email: '' }));
   });
 
   async function copy() {
-    if (!link) return;
-    await navigator.clipboard.writeText(link);
+    if (!created) return;
+    await navigator.clipboard.writeText(created.link);
     setCopied(true);
   }
 
@@ -69,6 +86,7 @@ export function InvitesTab() {
   if (invites.error) return <FormAlert message={invites.error} />;
 
   const list = invites.data ?? [];
+  const withEmail = form.email.trim().length > 0;
   const pending = list.filter((invite) => invite.status === 'pending').length;
 
   return (
@@ -76,7 +94,7 @@ export function InvitesTab() {
       <form className="dash-card invite-card" onSubmit={create.onSubmit} noValidate>
         <header className="dash-card-head">
           <h2>Convidar pessoa</h2>
-          <span>O link vale por 7 dias e pode ser usado uma vez</span>
+          <span>O convite vale por 7 dias e pode ser usado uma vez</span>
         </header>
         <FormAlert message={create.formError} />
         <div className="invite-grid">
@@ -84,7 +102,7 @@ export function InvitesTab() {
             label="E-mail (opcional)"
             type="email"
             placeholder="pessoa@empresa.com"
-            hint="Sem e-mail, qualquer pessoa com o link pode usar o convite uma vez."
+            hint="Com e-mail, o convite chega direto para a pessoa. Sem e-mail, você copia o link e envia por onde preferir."
             value={form.email}
             onChange={(event) => setForm({ ...form, email: event.target.value })}
             error={create.fieldError('email')}
@@ -108,20 +126,20 @@ export function InvitesTab() {
             ]}
           />
           <button type="submit" className="button invite-submit" disabled={create.pending}>
-            <LinkIcon />
-            {create.pending ? 'Gerando…' : 'Gerar link de convite'}
+            {withEmail ? <MailIcon /> : <LinkIcon />}
+            {submitLabel(withEmail, create.pending)}
           </button>
         </div>
 
-        {link ? (
+        {created ? (
           <output className="invite-link">
             <span className="invite-link-icon" aria-hidden="true">
               <CheckIcon />
             </span>
             <div className="invite-link-body">
-              <strong>Convite criado. Envie este link para a pessoa:</strong>
+              <strong>{createdMessage(created)}</strong>
               <div className="invite-link-row">
-                <input aria-label="Link do convite" value={link} readOnly onFocus={(event) => event.target.select()} />
+                <input aria-label="Link do convite" value={created.link} readOnly onFocus={(event) => event.target.select()} />
                 <button type="button" className="button button-secondary button-sm" onClick={copy}>
                   <CopyIcon />
                   {copied ? 'Copiado!' : 'Copiar'}

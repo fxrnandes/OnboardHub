@@ -1,0 +1,27 @@
+name: Disponibilidade
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Conferir se a produção está no ar
+    if: vars.API_DOMAIN != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Chamar a API e o site
+        run: |
+          for attempt in 1 2 3; do
+            if curl -fsS --max-time 15 "https://${{ vars.API_DOMAIN }}/api/health" && curl -fsS --max-time 15 -o /dev/null "https://${{ vars.API_DOMAIN }}/"; then
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "::error::A produção não respondeu em https://${{ vars.API_DOMAIN }} depois de 3 tentativas."
+          exit 1

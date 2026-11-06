@@ -5,7 +5,9 @@ import { AppError } from '../../http/errors.js';
 import { hashPassword } from '../auth/password.js';
 import type { TokenService } from '../auth/token.js';
 import { JobRoleRepository } from '../job-roles/job-role.repository.js';
+import type { Mailer } from '../mail/mailer.js';
 import { UserRepository, type User } from '../users/user.repository.js';
+import { inviteEmail } from './invite-email.js';
 import { InviteRepository, type Invite, type InviteRole } from './invite.repository.js';
 
 const VALID_DAYS = 7;
@@ -45,9 +47,10 @@ export class InviteService {
     private readonly pool: pg.Pool,
     private readonly tokens: TokenService,
     private readonly appUrl: string,
+    private readonly mailer: Mailer,
   ) {}
 
-  async create(input: CreateInviteInput): Promise<{ invite: Invite; link: string }> {
+  async create(input: CreateInviteInput): Promise<{ invite: Invite; link: string; emailSent: boolean }> {
     if (input.jobRoleId && !(await new JobRoleRepository(this.pool).find(input.companyId, input.jobRoleId))) {
       throw new AppError(400, 'job_role_not_found', 'Cargo não encontrado.');
     }
@@ -63,7 +66,20 @@ export class InviteService {
       expiresAt: new Date(Date.now() + VALID_DAYS * 24 * 60 * 60 * 1000),
     });
 
-    return { invite, link: `${this.appUrl.replace(/\/$/, '')}/convite/${token}` };
+    const link = `${this.appUrl.replace(/\/$/, '')}/convite/${token}`;
+    return { invite, link, emailSent: await this.sendEmail(invite, input.createdBy, link) };
+  }
+
+  private async sendEmail(invite: Invite, inviterId: string, link: string): Promise<boolean> {
+    if (!invite.email) return false;
+    try {
+      const inviter = await new UserRepository(this.pool).findById(inviterId);
+      await this.mailer.send({ to: invite.email, ...inviteEmail(invite, inviter?.name ?? null, link, VALID_DAYS) });
+      return true;
+    } catch (error) {
+      console.error('Falha ao enviar o e-mail de convite', error);
+      return false;
+    }
   }
 
   async preview(token: string): Promise<Invite> {

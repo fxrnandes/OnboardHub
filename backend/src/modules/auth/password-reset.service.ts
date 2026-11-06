@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import type pg from 'pg';
 import { withTransaction } from '../../db/transaction.js';
 import { AppError } from '../../http/errors.js';
+import { escapeHtml } from '../mail/html.js';
 import type { Mailer } from '../mail/mailer.js';
 import { UserRepository, type User } from '../users/user.repository.js';
 import { hashPassword } from './password.js';
@@ -20,9 +21,6 @@ function ensureUsable(reset: PasswordReset | null): PasswordReset {
   }
   return reset;
 }
-
-const escapeHtml = (value: string) =>
-  value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
 
 function resetEmail(name: string, link: string) {
   const firstName = name.split(' ')[0] ?? name;

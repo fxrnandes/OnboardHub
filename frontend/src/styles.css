@@ -1116,6 +1116,30 @@ a:hover {
   color: var(--ob-ink);
 }
 
+.auth-invite-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--ob-neutral-200);
+  border-radius: 12px;
+  background: var(--ob-neutral-50);
+  color: var(--ob-neutral-600);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.auth-invite-note svg {
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  flex: none;
+  fill: none;
+  stroke: var(--ob-brand-600);
+  stroke-width: 1.6;
+}
+
 .auth-footnote {
   display: flex;
   align-items: center;
