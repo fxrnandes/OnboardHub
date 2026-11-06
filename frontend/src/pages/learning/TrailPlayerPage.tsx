@@ -101,6 +101,72 @@ function FinishBanner({ title }: Readonly<{ title: string }>) {
   );
 }
 
+function pickStep(steps: LearnerStep[], requested: string | null, resumeStepId: string | null | undefined) {
+  if (steps.some((step) => step.id === requested)) return requested;
+  return resumeStepId ?? steps[0]?.id;
+}
+
+function showFinish(justFinished: boolean, completed: boolean, current: LearnerStep | undefined) {
+  return justFinished || (completed && !current);
+}
+
+function StepHeader({
+  step,
+  moduleLabel,
+  position,
+  total,
+}: Readonly<{ step: LearnerStep; moduleLabel: string | null; position: number; total: number }>) {
+  return (
+    <header className="step-header">
+      <span className={`step-kind kind-${step.kind}`}>
+        <KindIcon kind={step.kind} />
+        {stepKindLabels[step.kind]}
+      </span>
+      {moduleLabel ? <span className="step-module">{moduleLabel}</span> : null}
+      <span className="step-count">
+        Passo {position} de {total}
+      </span>
+    </header>
+  );
+}
+
+function StepActions({
+  done,
+  hasNext,
+  pending,
+  onUndo,
+  onNext,
+  onComplete,
+}: Readonly<{ done: boolean; hasNext: boolean; pending: boolean; onUndo: () => void; onNext: () => void; onComplete: () => void }>) {
+  if (!done) {
+    return (
+      <div className="player-footer-main">
+        <button type="button" className="button" onClick={onComplete} disabled={pending}>
+          {hasNext ? 'Concluir e avançar' : 'Concluir trilha'}
+          {hasNext ? <ArrowRightIcon /> : <CheckIcon />}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="player-footer-main">
+      <span className="done-note">
+        <CheckIcon />
+        Concluído
+      </span>
+      <button type="button" className="button-ghost" onClick={onUndo} disabled={pending}>
+        Desmarcar
+      </button>
+      {hasNext ? (
+        <button type="button" className="button" onClick={onNext}>
+          Próximo
+          <ArrowRightIcon />
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 export function TrailPlayerPage() {
   const { id = '' } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -110,8 +176,7 @@ export function TrailPlayerPage() {
   const [justFinished, setJustFinished] = useState(false);
 
   const steps = data.data?.trail.modules.flatMap((module) => module.steps) ?? [];
-  const requested = searchParams.get('passo');
-  const currentId = steps.some((step) => step.id === requested) ? requested : data.data?.resumeStepId ?? steps[0]?.id;
+  const currentId = pickStep(steps, searchParams.get('passo'), data.data?.resumeStepId);
   const index = steps.findIndex((step) => step.id === currentId);
   const current = steps[index];
 
@@ -197,28 +262,18 @@ export function TrailPlayerPage() {
       </aside>
 
       <article className="player-main">
-        {justFinished || (progress.completed && !current) ? (
-          <FinishBanner title={trail.title} />
-        ) : null}
+        {showFinish(justFinished, progress.completed, current) ? <FinishBanner title={trail.title} /> : null}
 
         <FormAlert message={action.error} />
 
         {current ? (
           <>
-            <header className="step-header">
-              <span className={`step-kind kind-${current.kind}`}>
-                <KindIcon kind={current.kind} />
-                {stepKindLabels[current.kind]}
-              </span>
-              {currentModule ? (
-                <span className="step-module">
-                  Módulo {currentModuleIndex + 1} · {currentModule.title}
-                </span>
-              ) : null}
-              <span className="step-count">
-                Passo {index + 1} de {steps.length}
-              </span>
-            </header>
+            <StepHeader
+              step={current}
+              moduleLabel={currentModule ? `Módulo ${currentModuleIndex + 1} · ${currentModule.title}` : null}
+              position={index + 1}
+              total={steps.length}
+            />
             <h2 className="step-heading">{current.title}</h2>
             <StepContent step={current} />
 
@@ -232,30 +287,14 @@ export function TrailPlayerPage() {
                 <ArrowLeftIcon />
                 Anterior
               </button>
-              <div className="player-footer-main">
-                {current.completedAt ? (
-                  <>
-                    <span className="done-note">
-                      <CheckIcon />
-                      Concluído
-                    </span>
-                    <button type="button" className="button-ghost" onClick={undo} disabled={action.pending}>
-                      Desmarcar
-                    </button>
-                    {next ? (
-                      <button type="button" className="button" onClick={() => goTo(next.id)}>
-                        Próximo
-                        <ArrowRightIcon />
-                      </button>
-                    ) : null}
-                  </>
-                ) : (
-                  <button type="button" className="button" onClick={completeAndAdvance} disabled={action.pending}>
-                    {next ? 'Concluir e avançar' : 'Concluir trilha'}
-                    {next ? <ArrowRightIcon /> : <CheckIcon />}
-                  </button>
-                )}
-              </div>
+              <StepActions
+                done={Boolean(current.completedAt)}
+                hasNext={Boolean(next)}
+                pending={action.pending}
+                onUndo={undo}
+                onNext={() => next && goTo(next.id)}
+                onComplete={completeAndAdvance}
+              />
             </footer>
           </>
         ) : (

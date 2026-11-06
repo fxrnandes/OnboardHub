@@ -4606,7 +4606,6 @@ a.button.button-light:hover {
 }
 
 .module-index {
-  align-items: center;
   justify-content: center;
   display: grid;
   flex: none;

@@ -82,9 +82,9 @@ function summaryOf(modules: number, steps: number, roleNames: string[]) {
   return `${moduleText} · ${stepText} · ${roleText}`;
 }
 
-function toggled(ids: string[], id: string, checked: boolean) {
-  return checked ? [...ids, id] : ids.filter((existing) => existing !== id);
-}
+const withRole = (ids: string[], id: string) => [...ids, id];
+
+const withoutRole = (ids: string[], id: string) => ids.filter((existing) => existing !== id);
 
 export function TrailEditorPage() {
   const { id = '' } = useParams();
@@ -153,8 +153,9 @@ export function TrailEditorPage() {
     });
   }
 
-  async function toggleJobRole(jobRoleId: string, checked: boolean) {
-    const next = toggled(current.jobRoleIds, jobRoleId, checked);
+  async function toggleJobRole(jobRoleId: string) {
+    const ids = current.jobRoleIds;
+    const next = ids.includes(jobRoleId) ? withoutRole(ids, jobRoleId) : withRole(ids, jobRoleId);
     trail.setData({ ...current, jobRoleIds: next });
     const ok = await run(() => trailsApi.setJobRoles(id, next));
     if (!ok) trail.setData(current);
@@ -317,7 +318,7 @@ export function TrailEditorPage() {
                         type="checkbox"
                         checked={checked}
                         disabled={action.pending}
-                        onChange={(event) => toggleJobRole(jobRole.id, event.target.checked)}
+                        onChange={() => toggleJobRole(jobRole.id)}
                       />
                       <span className="role-option-box" aria-hidden="true">
                         <CheckIcon />
