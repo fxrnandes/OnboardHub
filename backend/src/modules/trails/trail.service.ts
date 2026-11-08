@@ -101,6 +101,11 @@ export class TrailService {
     return this.withTreeMedia(companyId, trail);
   }
 
+  async audience(companyId: string, id: string) {
+    if (!(await this.trails.find(companyId, id))) throw trailNotFound();
+    return this.trails.audience(companyId, id);
+  }
+
   async withTreeMedia<T extends TrailTree>(companyId: string, trail: T): Promise<T> {
     const steps = await this.withMedia(
       companyId,

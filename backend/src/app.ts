@@ -9,6 +9,7 @@ import { authRoutes } from './modules/auth/auth.routes.js';
 import { AuthService } from './modules/auth/auth.service.js';
 import { PasswordResetService } from './modules/auth/password-reset.service.js';
 import { TokenService } from './modules/auth/token.js';
+import { companyRoutes } from './modules/companies/company.routes.js';
 import { inviteRoutes } from './modules/invites/invite.routes.js';
 import { InviteService } from './modules/invites/invite.service.js';
 import { LogMailer, type Mailer } from './modules/mail/mailer.js';
@@ -83,6 +84,7 @@ export function createApp({
   app.use('/health', healthRouter);
   const resets = new PasswordResetService(pool, tokens, mailer, appUrl);
   app.use('/auth', authRoutes(new AuthService(pool, tokens, media), resets, authenticated));
+  app.use('/company', companyRoutes(pool, authenticated));
   app.use('/job-roles', jobRoleRoutes(pool, authenticated));
   app.use('/members', memberRoutes(pool, authenticated));
   app.use('/invites', inviteRoutes(pool, new InviteService(pool, tokens, appUrl, mailer), authenticated));

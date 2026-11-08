@@ -14,6 +14,8 @@ export interface Invite {
   status: InviteStatus;
   expiresAt: Date;
   createdAt: Date;
+  acceptedAt: Date | null;
+  acceptedByName: string | null;
 }
 
 export interface NewInvite {
@@ -37,6 +39,8 @@ interface InviteRow {
   status: InviteStatus;
   expires_at: Date;
   created_at: Date;
+  accepted_at: Date | null;
+  accepted_by_name: string | null;
 }
 
 const toInvite = (row: InviteRow): Invite => ({
@@ -50,11 +54,13 @@ const toInvite = (row: InviteRow): Invite => ({
   status: row.status,
   expiresAt: row.expires_at,
   createdAt: row.created_at,
+  acceptedAt: row.accepted_at,
+  acceptedByName: row.accepted_by_name,
 });
 
 const select = `
   select i.id, i.company_id, c.name as company_name, i.email, i.role, i.job_role_id,
-         jr.name as job_role_name, i.expires_at, i.created_at,
+         jr.name as job_role_name, i.expires_at, i.created_at, i.accepted_at, ua.name as accepted_by_name,
          case
            when i.accepted_at is not null then 'accepted'
            when i.revoked_at is not null then 'revoked'
@@ -63,7 +69,8 @@ const select = `
          end as status
   from invites i
   join companies c on c.id = i.company_id
-  left join job_roles jr on jr.id = i.job_role_id`;
+  left join job_roles jr on jr.id = i.job_role_id
+  left join users ua on ua.id = i.accepted_by`;
 
 export class InviteRepository {
   constructor(private readonly db: Queryable) {}
@@ -105,6 +112,24 @@ export class InviteRepository {
       [companyId, id],
     );
     return rowCount === 1;
+  }
+
+  async hasPendingFor(companyId: string, email: string): Promise<boolean> {
+    const { rowCount } = await this.db.query(
+      `select 1 from invites
+       where company_id = $1 and email = $2 and accepted_at is null and revoked_at is null and expires_at > now()`,
+      [companyId, email],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  async renew(companyId: string, id: string, tokenHash: string, expiresAt: Date): Promise<Invite | null> {
+    const { rowCount } = await this.db.query(
+      `update invites set token_hash = $3, expires_at = $4
+       where company_id = $1 and id = $2 and accepted_at is null and revoked_at is null`,
+      [companyId, id, tokenHash, expiresAt],
+    );
+    return rowCount === 1 ? this.findInCompany(companyId, id) : null;
   }
 
   async markAccepted(id: string, userId: string): Promise<void> {

@@ -1,4 +1,4 @@
-import { Router, type RequestHandler } from 'express';
+import { Router, type Request, type RequestHandler } from 'express';
 import { z } from 'zod';
 import type { Queryable } from '../../db/pool.js';
 import { AppError } from '../../http/errors.js';
@@ -9,11 +9,16 @@ import type { InviteService } from './invite.service.js';
 
 const email = z.string().trim().toLowerCase().pipe(z.email('E-mail inválido.'));
 
-const createSchema = z.object({
-  email: email.nullish(),
-  role: z.enum(['gestor', 'colaborador'], 'Papel inválido.').default('colaborador'),
-  jobRoleId: z.uuid('Cargo inválido.').nullish(),
-});
+const createSchema = z
+  .object({
+    email: email.nullish(),
+    role: z.enum(['gestor', 'colaborador'], 'Papel inválido.').default('colaborador'),
+    jobRoleId: z.uuid('Cargo inválido.').nullish(),
+  })
+  .refine((input) => input.role !== 'colaborador' || input.jobRoleId, {
+    path: ['jobRoleId'],
+    message: 'Escolha o cargo: é por ele que a pessoa vê as trilhas.',
+  });
 
 const acceptSchema = z.object({
   name: z.string().trim().min(2, 'O nome precisa ter pelo menos 2 caracteres.').max(120),
@@ -21,16 +26,20 @@ const acceptSchema = z.object({
   password: z.string().min(8, 'A senha precisa ter pelo menos 8 caracteres.').max(72),
 });
 
-const toResponse = ({ id, email, role, jobRoleId, jobRoleName, status, expiresAt, createdAt }: Invite) => ({
-  id,
-  email,
-  role,
-  jobRoleId,
-  jobRoleName,
-  status,
-  expiresAt,
-  createdAt,
+const toResponse = (invite: Invite) => ({
+  id: invite.id,
+  email: invite.email,
+  role: invite.role,
+  jobRoleId: invite.jobRoleId,
+  jobRoleName: invite.jobRoleName,
+  status: invite.status,
+  expiresAt: invite.expiresAt,
+  createdAt: invite.createdAt,
+  acceptedAt: invite.acceptedAt,
+  acceptedByName: invite.acceptedByName,
 });
+
+const GESTOR_ONLY_COLABORADOR = 'Gestores convidam só colaboradores.';
 
 export function inviteRoutes(db: Queryable, service: InviteService, requireAuth: RequestHandler): Router {
   const router = Router();
@@ -57,7 +66,14 @@ export function inviteRoutes(db: Queryable, service: InviteService, requireAuth:
     });
   });
 
-  router.use(requireAuth, requireRole('master'));
+  router.use(requireAuth, requireRole('master', 'gestor'));
+
+  async function managedInvite(req: Request): Promise<Invite> {
+    const invite = await invites.findInCompany(req.auth!.companyId, idParam(req.params.id, 'Convite'));
+    if (!invite) throw new AppError(404, 'not_found', 'Convite pendente não encontrado.');
+    if (req.auth!.role === 'gestor' && invite.role !== 'colaborador') throw new AppError(403, 'forbidden', GESTOR_ONLY_COLABORADOR);
+    return invite;
+  }
 
   router.get('/', async (req, res) => {
     const list = await invites.list(req.auth!.companyId);
@@ -66,6 +82,7 @@ export function inviteRoutes(db: Queryable, service: InviteService, requireAuth:
 
   router.post('/', async (req, res) => {
     const input = createSchema.parse(req.body);
+    if (req.auth!.role === 'gestor' && input.role !== 'colaborador') throw new AppError(403, 'forbidden', GESTOR_ONLY_COLABORADOR);
     const { invite, link, emailSent } = await service.create({
       ...input,
       companyId: req.auth!.companyId,
@@ -74,8 +91,14 @@ export function inviteRoutes(db: Queryable, service: InviteService, requireAuth:
     res.status(201).json({ invite: toResponse(invite), link, emailSent });
   });
 
+  router.post('/:id/resend', async (req, res) => {
+    const invite = await managedInvite(req);
+    const result = await service.resend(req.auth!.companyId, invite.id, req.auth!.userId);
+    res.json({ invite: toResponse(result.invite), link: result.link, emailSent: result.emailSent });
+  });
+
   router.delete('/:id', async (req, res) => {
-    const id = idParam(req.params.id, 'Convite');
+    const { id } = await managedInvite(req);
     if (!(await invites.revoke(req.auth!.companyId, id))) {
       throw new AppError(404, 'not_found', 'Convite pendente não encontrado.');
     }

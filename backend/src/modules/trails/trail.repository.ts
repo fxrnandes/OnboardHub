@@ -76,6 +76,20 @@ export class TrailRepository {
     return rows.map(toTrail);
   }
 
+  async audience(companyId: string, id: string): Promise<{ people: number; started: number }> {
+    const { rows } = await this.db.query<{ people: number; started: number }>(
+      `select count(distinct u.id)::int as people,
+              count(distinct u.id) filter (where exists (
+                select 1 from step_progress sp where sp.user_id = u.id and sp.trail_id = tj.trail_id
+              ))::int as started
+       from trail_job_roles tj
+       join users u on u.company_id = tj.company_id and u.job_role_id = tj.job_role_id
+       where tj.company_id = $1 and tj.trail_id = $2`,
+      [companyId, id],
+    );
+    return rows[0]!;
+  }
+
   async find(companyId: string, id: string): Promise<TrailSummary | null> {
     const { rows } = await this.db.query<TrailRow>(`${selectTrail} where t.company_id = $1 and t.id = $2`, [
       companyId,

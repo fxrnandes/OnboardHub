@@ -38,7 +38,7 @@ describe('convites por link (H02)', () => {
 
   it('o token do convite não fica salvo no banco, só um resumo (hash) dele', async () => {
     const { master } = await newCompany(app);
-    const created = await master.post('/invites', {});
+    const created = await master.post('/invites', { role: 'gestor' });
     const token = tokenFrom(created.body.link);
 
     const { rows } = await pool.query('select token_hash from invites where id = $1', [created.body.invite.id]);
@@ -63,7 +63,7 @@ describe('convites por link (H02)', () => {
 
   it('cada convite só pode ser usado uma vez', async () => {
     const { master } = await newCompany(app);
-    const token = tokenFrom((await master.post('/invites', { email: uniqueEmail() })).body.link);
+    const token = tokenFrom((await master.post('/invites', { email: uniqueEmail(), role: 'gestor' })).body.link);
     await accept(token, { name: 'Pessoa', password: 'senha-forte-123' });
 
     const again = await accept(token, { name: 'Pessoa', password: 'senha-forte-123' });
@@ -74,7 +74,7 @@ describe('convites por link (H02)', () => {
 
   it('convite cancelado não funciona mais', async () => {
     const { master } = await newCompany(app);
-    const created = await master.post('/invites', {});
+    const created = await master.post('/invites', { role: 'gestor' });
 
     expect((await master.delete(`/invites/${created.body.invite.id}`)).status).toBe(204);
 
@@ -86,7 +86,7 @@ describe('convites por link (H02)', () => {
 
   it('convite vence depois de 7 dias', async () => {
     const { master } = await newCompany(app);
-    const created = await master.post('/invites', {});
+    const created = await master.post('/invites', { role: 'gestor' });
     const expiresAt = new Date(created.body.invite.expiresAt).getTime();
     expect(expiresAt - Date.now()).toBeGreaterThan(6.9 * 24 * 60 * 60 * 1000);
 
@@ -106,7 +106,7 @@ describe('convites por link (H02)', () => {
   it('recusa aceitar com e-mail que já tem conta', async () => {
     const { master } = await newCompany(app);
     const { email } = await addMember(app, master, 'colaborador');
-    const token = tokenFrom((await master.post('/invites', {})).body.link);
+    const token = tokenFrom((await master.post('/invites', { role: 'gestor' })).body.link);
 
     const res = await accept(token, { name: 'Pessoa', password: 'senha-forte-123', email });
 
@@ -128,17 +128,16 @@ describe('convites por link (H02)', () => {
     expect(res.body.error.code).toBe('job_role_not_found');
   });
 
-  it('só o master convida e vê os convites', async () => {
+  it('gestor não convida outro gestor', async () => {
     const { master } = await newCompany(app);
     const { member: gestor } = await addMember(app, master, 'gestor');
 
-    expect((await gestor.post('/invites', {})).status).toBe(403);
-    expect((await gestor.get('/invites')).status).toBe(403);
+    expect((await gestor.post('/invites', { role: 'gestor' })).status).toBe(403);
   });
 
   it('valida os dados de quem aceita', async () => {
     const { master } = await newCompany(app);
-    const token = tokenFrom((await master.post('/invites', {})).body.link);
+    const token = tokenFrom((await master.post('/invites', { role: 'gestor' })).body.link);
 
     const res = await accept(token, { name: 'A', password: '123' });
 

@@ -37,7 +37,7 @@ describe('convite enviado por e-mail', () => {
     const { master } = await newCompany(app);
     const before = mailer.sent.length;
 
-    const res = await master.post('/invites', { role: 'colaborador' });
+    const res = await master.post('/invites', { role: 'gestor' });
 
     expect(res.status).toBe(201);
     expect(res.body.emailSent).toBe(false);
@@ -48,7 +48,7 @@ describe('convite enviado por e-mail', () => {
     const { master } = await newCompany(app);
     mailer.failNext = true;
 
-    const res = await master.post('/invites', { email: uniqueEmail('falha'), role: 'colaborador' });
+    const res = await master.post('/invites', { email: uniqueEmail('falha'), role: 'gestor' });
 
     expect(res.status).toBe(201);
     expect(res.body.emailSent).toBe(false);

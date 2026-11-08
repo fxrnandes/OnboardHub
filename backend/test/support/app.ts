@@ -66,6 +66,11 @@ export async function newCompany(app: App, companyName = 'Empresa Teste') {
   return { master: client(app, res.body.token), masterId: res.body.user.id as string, companyId: res.body.company.id as string };
 }
 
+async function defaultJobRole(master: ReturnType<typeof client>) {
+  const existing = (await master.get('/job-roles')).body.jobRoles?.find((jobRole: { name: string }) => jobRole.name === 'Geral');
+  return (existing ?? (await master.post('/job-roles', { name: 'Geral' })).body.jobRole).id as string;
+}
+
 export async function addMember(
   app: App,
   master: ReturnType<typeof client>,
@@ -73,7 +78,8 @@ export async function addMember(
   jobRoleId: string | null = null,
 ) {
   const email = uniqueEmail(role);
-  const invite = await master.post('/invites', { email, role, jobRoleId });
+  const cargo = jobRoleId ?? (role === 'colaborador' ? await defaultJobRole(master) : null);
+  const invite = await master.post('/invites', { email, role, jobRoleId: cargo });
   const token = invite.body.link.split('/convite/')[1];
   const accepted = await request(app)
     .post(`/invites/token/${token}/accept`)

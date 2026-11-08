@@ -40,6 +40,14 @@ export class CompanyRepository {
     return rows[0] ? toCompany(rows[0]) : null;
   }
 
+  async rename(id: string, name: string): Promise<Company> {
+    const { rows } = await this.db.query<CompanyRow>(
+      'update companies set name = $2 where id = $1 returning id, name, cnpj, created_at',
+      [id, name],
+    );
+    return toCompany(rows[0]!);
+  }
+
   async delete(id: string): Promise<void> {
     await this.db.query('delete from trails where company_id = $1', [id]);
     await this.db.query('delete from companies where id = $1', [id]);

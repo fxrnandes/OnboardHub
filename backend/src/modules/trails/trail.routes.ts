@@ -52,6 +52,10 @@ export function trailRoutes(service: TrailService, requireAuth: RequestHandler):
     res.json({ trail: await service.get(req.auth!.companyId, idParam(req.params.id, 'Trilha')) });
   });
 
+  router.get('/trails/:id/audience', async (req, res) => {
+    res.json(await service.audience(req.auth!.companyId, idParam(req.params.id, 'Trilha')));
+  });
+
   router.patch('/trails/:id', async (req, res) => {
     const changes = updateTrailSchema.parse(req.body);
     res.json({ trail: await service.update(req.auth!.companyId, idParam(req.params.id, 'Trilha'), changes) });

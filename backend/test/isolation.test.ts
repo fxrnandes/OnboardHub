@@ -11,7 +11,7 @@ async function build(name: string) {
   const company = await newCompany(app, name);
   const jobRole = (await company.master.post('/job-roles', { name: 'Cargo' })).body.jobRole;
   const { memberId } = await addMember(app, company.master, 'colaborador', jobRole.id);
-  const invite = (await company.master.post('/invites', {})).body.invite;
+  const invite = (await company.master.post('/invites', { role: 'gestor' })).body.invite;
   return { ...company, jobRole, memberId, invite };
 }
 

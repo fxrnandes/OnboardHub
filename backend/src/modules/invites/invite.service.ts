@@ -28,6 +28,14 @@ export interface AcceptInviteInput {
 }
 
 const hashToken = (token: string) => createHash('sha256').update(token).digest('hex');
+const newToken = () => randomBytes(32).toString('base64url');
+const expiry = () => new Date(Date.now() + VALID_DAYS * 24 * 60 * 60 * 1000);
+
+export interface InviteLink {
+  invite: Invite;
+  link: string;
+  emailSent: boolean;
+}
 
 function ensureUsable(invite: Invite | null): Invite {
   if (!invite) throw new AppError(404, 'not_found', 'Convite não encontrado.');
@@ -50,24 +58,45 @@ export class InviteService {
     private readonly mailer: Mailer,
   ) {}
 
-  async create(input: CreateInviteInput): Promise<{ invite: Invite; link: string; emailSent: boolean }> {
+  async create(input: CreateInviteInput): Promise<InviteLink> {
     if (input.jobRoleId && !(await new JobRoleRepository(this.pool).find(input.companyId, input.jobRoleId))) {
       throw new AppError(400, 'job_role_not_found', 'Cargo não encontrado.');
     }
+    const email = input.email?.trim().toLowerCase() || null;
+    if (email) await this.ensureInvitable(input.companyId, email);
 
-    const token = randomBytes(32).toString('base64url');
+    const token = newToken();
     const invite = await new InviteRepository(this.pool).create({
       companyId: input.companyId,
       tokenHash: hashToken(token),
-      email: input.email?.trim().toLowerCase() || null,
+      email,
       role: input.role,
       jobRoleId: input.jobRoleId ?? null,
       createdBy: input.createdBy,
-      expiresAt: new Date(Date.now() + VALID_DAYS * 24 * 60 * 60 * 1000),
+      expiresAt: expiry(),
     });
+    return this.deliver(invite, input.createdBy, token);
+  }
 
+  async resend(companyId: string, id: string, requesterId: string): Promise<InviteLink> {
+    const token = newToken();
+    const invite = await new InviteRepository(this.pool).renew(companyId, id, hashToken(token), expiry());
+    if (!invite) throw new AppError(404, 'not_found', 'Convite pendente não encontrado.');
+    return this.deliver(invite, requesterId, token);
+  }
+
+  private async ensureInvitable(companyId: string, email: string) {
+    if (await new UserRepository(this.pool).findByEmail(email)) {
+      throw new AppError(409, 'email_already_registered', 'Já existe uma conta com este e-mail.');
+    }
+    if (await new InviteRepository(this.pool).hasPendingFor(companyId, email)) {
+      throw new AppError(409, 'invite_already_pending', 'Já existe um convite pendente para este e-mail. Use "Reenviar".');
+    }
+  }
+
+  private async deliver(invite: Invite, senderId: string, token: string): Promise<InviteLink> {
     const link = `${this.appUrl.replace(/\/$/, '')}/convite/${token}`;
-    return { invite, link, emailSent: await this.sendEmail(invite, input.createdBy, link) };
+    return { invite, link, emailSent: await this.sendEmail(invite, senderId, link) };
   }
 
   private async sendEmail(invite: Invite, inviterId: string, link: string): Promise<boolean> {
