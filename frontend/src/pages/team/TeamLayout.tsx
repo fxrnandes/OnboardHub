@@ -12,14 +12,14 @@ export function TeamLayout() {
       <header className="page-head">
         <div className="home-header">
           <h1>Equipe</h1>
-          <p>{isMaster ? 'Gerencie as pessoas, os cargos e os convites da empresa.' : 'Pessoas da empresa e seus cargos.'}</p>
+          <p>{isMaster ? 'Gerencie as pessoas, os cargos e os convites da empresa.' : 'Pessoas da empresa, seus cargos e os convites.'}</p>
         </div>
-        {isMaster && !pathname.endsWith('/convites') ? (
+        {pathname.endsWith('/convites') ? null : (
           <Link to="/equipe/convites" className="button">
             <MailIcon />
             Convidar pessoa
           </Link>
-        ) : null}
+        )}
       </header>
       <nav className="team-tabs" aria-label="Seções da equipe">
         <NavLink to="/equipe/membros">
@@ -32,12 +32,10 @@ export function TeamLayout() {
             Cargos
           </NavLink>
         ) : null}
-        {isMaster ? (
-          <NavLink to="/equipe/convites">
-            <MailIcon />
-            Convites
-          </NavLink>
-        ) : null}
+        <NavLink to="/equipe/convites">
+          <MailIcon />
+          Convites
+        </NavLink>
       </nav>
       <Outlet />
     </section>

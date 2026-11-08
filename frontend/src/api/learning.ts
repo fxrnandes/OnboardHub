@@ -17,6 +17,22 @@ export interface MyTrail extends Omit<Progress, 'nextStepId'> {
   publishedAt: string;
 }
 
+export type MyTrailStatus = 'todo' | 'doing' | 'done';
+
+export function myTrailStatus(trail: MyTrail): MyTrailStatus {
+  if (trail.completed) return 'done';
+  return trail.completedSteps > 0 ? 'doing' : 'todo';
+}
+
+const statusOrder: Record<MyTrailStatus, number> = { doing: 0, todo: 1, done: 2 };
+
+export function sortMyTrails(trails: MyTrail[]): MyTrail[] {
+  return trails
+    .map((trail, index) => ({ trail, index }))
+    .sort((a, b) => statusOrder[myTrailStatus(a.trail)] - statusOrder[myTrailStatus(b.trail)] || a.index - b.index)
+    .map(({ trail }) => trail);
+}
+
 export interface LearnerStep extends Step {
   completedAt: string | null;
 }

@@ -12,6 +12,7 @@ import { AlertIcon, ArrowLeftIcon, CheckIcon, FlowIcon, ListIcon, PlusIcon } fro
 import { FlowView } from './flow/FlowView';
 import { ModuleCard } from './ModuleCard';
 import { Bone, HeaderBones, Loading } from '../../components/Skeleton';
+import { LiveTrailNotice } from './LiveTrailNotice';
 
 type EditorView = 'list' | 'flow';
 
@@ -204,6 +205,7 @@ export function TrailEditorPage() {
       </header>
 
       <FormAlert message={action.error} />
+      {published ? <LiveTrailNotice key={current.jobRoleIds.join()} trailId={id} /> : null}
       {warnings.map((warning) => (
         <output key={warning} className="form-warning">
           <AlertIcon />

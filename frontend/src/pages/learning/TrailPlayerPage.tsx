@@ -174,6 +174,7 @@ export function TrailPlayerPage() {
   const data = useResource(load);
   const action = useAction();
   const [justFinished, setJustFinished] = useState(false);
+  const [outlineOpen, setOutlineOpen] = useState(false);
 
   const steps = data.data?.trail.modules.flatMap((module) => module.steps) ?? [];
   const currentId = pickStep(steps, searchParams.get('passo'), data.data?.resumeStepId);
@@ -197,7 +198,10 @@ export function TrailPlayerPage() {
   }
 
   const { trail, progress } = data.data;
-  const goTo = (stepId: string) => setSearchParams({ passo: stepId });
+  const goTo = (stepId: string) => {
+    setOutlineOpen(false);
+    setSearchParams({ passo: stepId });
+  };
   const previous = steps[index - 1];
   const next = steps[index + 1];
 
@@ -242,7 +246,16 @@ export function TrailPlayerPage() {
             {progress.completedSteps} de {progress.totalSteps} passos · {progress.percent}%
           </p>
         </div>
-        <nav className="player-nav">
+        <button
+          type="button"
+          className="button button-secondary button-sm player-outline-toggle"
+          aria-expanded={outlineOpen}
+          aria-controls="player-nav"
+          onClick={() => setOutlineOpen((open) => !open)}
+        >
+          {outlineOpen ? 'Esconder o conteúdo' : `Ver o conteúdo (${progress.totalSteps} passos)`}
+        </button>
+        <nav id="player-nav" className={outlineOpen ? 'player-nav is-open' : 'player-nav'}>
           {trail.modules.map((module, moduleIndex) => (
             <div key={module.id} className="outline-module">
               <span className="outline-module-title">

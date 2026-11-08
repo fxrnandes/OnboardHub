@@ -28,6 +28,14 @@ export interface Invite {
   status: InviteStatus;
   expiresAt: string;
   createdAt: string;
+  acceptedAt: string | null;
+  acceptedByName: string | null;
+}
+
+export interface InviteResult {
+  invite: Invite;
+  link: string;
+  emailSent: boolean;
 }
 
 export interface NewInvite {
@@ -53,7 +61,8 @@ export const membersApi = {
 
 export const invitesApi = {
   list: () => api.get<{ invites: Invite[] }>('/invites').then((data) => data.invites),
-  create: (input: NewInvite) => api.post<{ invite: Invite; link: string; emailSent: boolean }>('/invites', input),
+  create: (input: NewInvite) => api.post<InviteResult>('/invites', input),
+  resend: (id: string) => api.post<InviteResult>(`/invites/${id}/resend`),
   revoke: (id: string) => api.delete(`/invites/${id}`),
 };
 

@@ -45,6 +45,8 @@ describe('minhas trilhas', () => {
     renderApp('/minhas-trilhas');
 
     expect(await screen.findByRole('link', { name: 'Começar' })).toHaveAttribute('href', '/minhas-trilhas/t1');
+    const titles = within(screen.getByRole('list')).getAllByRole('heading').map((heading) => heading.textContent);
+    expect(titles).toEqual(['Ferramentas', 'Boas-vindas', 'Cultura']);
     expect(screen.getByRole('link', { name: 'Continuar' })).toHaveAttribute('href', '/minhas-trilhas/t2');
     expect(screen.getByRole('link', { name: 'Rever trilha' })).toBeInTheDocument();
     expect(screen.getByText('2 de 4 passos · 50%')).toBeInTheDocument();
@@ -180,6 +182,20 @@ describe('percorrer a trilha', () => {
     expect(screen.getByRole('link', { name: 'Assistir o vídeo' })).toHaveAttribute('href', 'https://exemplo.com/palestra');
   });
 
+  it('recolhe o índice da trilha e fecha ao escolher um passo', async () => {
+    asColaborador({ 'GET /my/trails/t1': { body: { ...fakeTrail(), resumeStepId: 's1' } } });
+    renderApp('/minhas-trilhas/t1');
+
+    const toggle = await screen.findByRole('button', { name: /Ver o conteúdo/ });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(toggle);
+    expect(screen.getByRole('button', { name: 'Esconder o conteúdo' })).toHaveAttribute('aria-expanded', 'true');
+
+    const outline = screen.getByRole('complementary', { name: 'Conteúdo da trilha' });
+    await userEvent.click(within(outline).getByRole('button', { name: /Vídeo do CEO/ }));
+    expect(screen.getByRole('button', { name: /Ver o conteúdo/ })).toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('mostra erro de trilha não encontrada', async () => {
     asColaborador({ 'GET /my/trails/x': { status: 404, body: { error: { code: 'not_found', message: 'Trilha não encontrada.' } } } });
     renderApp('/minhas-trilhas/x');
@@ -188,10 +204,33 @@ describe('percorrer a trilha', () => {
 });
 
 describe('início', () => {
-  it('mostra atalhos conforme o papel', async () => {
-    asColaborador({});
+  it('lista as trilhas do colaborador com progresso, as em andamento primeiro', async () => {
+    asColaborador({
+      'GET /my/trails': {
+        body: {
+          trails: [
+            { id: 't1', title: 'Cultura', description: '', publishedAt: '', totalSteps: 2, completedSteps: 2, percent: 100, completed: true, lastActivityAt: null },
+            { id: 't2', title: 'Boas-vindas', description: '', publishedAt: '', totalSteps: 4, completedSteps: 0, percent: 0, completed: false, lastActivityAt: null },
+            { id: 't3', title: 'Ferramentas', description: '', publishedAt: '', totalSteps: 4, completedSteps: 1, percent: 25, completed: false, lastActivityAt: null },
+          ],
+        },
+      },
+    });
     renderApp('/');
-    expect(await screen.findByRole('link', { name: /Seu onboarding/ })).toHaveAttribute('href', '/minhas-trilhas');
-    expect(screen.queryByRole('link', { name: /Convide pessoas/ })).not.toBeInTheDocument();
+
+    const section = await screen.findByRole('region', { name: 'Suas trilhas' });
+    const links = within(section).getAllByRole('link').filter((link) => link.getAttribute('href')?.startsWith('/minhas-trilhas/'));
+    expect(links.map((link) => link.getAttribute('href'))).toEqual(['/minhas-trilhas/t3', '/minhas-trilhas/t2', '/minhas-trilhas/t1']);
+    expect(within(section).getByText('1 de 4 passos · 25%')).toBeInTheDocument();
+    expect(within(section).getByRole('link', { name: 'Ver todas' })).toHaveAttribute('href', '/minhas-trilhas');
+    expect(screen.queryByRole('region', { name: 'Atalhos' })).not.toBeInTheDocument();
+  });
+
+  it('colaborador sem trilhas não vê atalhos repetidos do menu', async () => {
+    asColaborador({ 'GET /my/trails': { body: { trails: [] } } });
+    renderApp('/');
+    expect(await screen.findByText('Nenhuma trilha por aqui ainda')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Suas trilhas' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Atalhos' })).not.toBeInTheDocument();
   });
 });

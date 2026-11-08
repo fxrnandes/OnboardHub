@@ -23,7 +23,6 @@ import { Bone, HeaderBones, Loading, TableBones } from '../../components/Skeleto
 
 type StatusFilter = ProgressStatus | 'stalled' | 'all';
 
-
 function Ring({ percent }: Readonly<{ percent: number }>) {
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
@@ -133,12 +132,12 @@ function StatCards({ stats }: Readonly<{ stats: Overview }>) {
         <span className="dash-stat-icon" aria-hidden="true">
           <CheckIcon />
         </span>
-        <dt>Trilhas concluídas</dt>
+        <dt>Atribuições concluídas</dt>
         <dd>
           {stats.completedAssignments}
           <span>/{stats.assignments}</span>
         </dd>
-        <span className="dash-stat-hint">trilhas atribuídas já finalizadas</span>
+        <span className="dash-stat-hint">cada pessoa em cada trilha conta uma vez</span>
       </div>
       <div className={stats.stalled ? 'dash-stat is-alert' : 'dash-stat'}>
         <span className="dash-stat-icon" aria-hidden="true">
@@ -237,7 +236,29 @@ function AttentionCard({
   );
 }
 
+const PAGE_SIZE = 20;
+
+function Pager({ page, pages, total, setPage }: Readonly<{ page: number; pages: number; total: number; setPage: (page: number) => void }>) {
+  if (pages <= 1) return null;
+  const first = page * PAGE_SIZE + 1;
+  const last = Math.min(total, (page + 1) * PAGE_SIZE);
+  return (
+    <nav className="dash-pager" aria-label="Páginas da tabela">
+      <span>
+        {first}–{last} de {total}
+      </span>
+      <button type="button" className="button button-secondary button-sm" disabled={page === 0} onClick={() => setPage(page - 1)}>
+        Anterior
+      </button>
+      <button type="button" className="button button-secondary button-sm" disabled={page >= pages - 1} onClick={() => setPage(page + 1)}>
+        Próxima
+      </button>
+    </nav>
+  );
+}
+
 function PeopleTable({ filtered, now }: Readonly<{ filtered: ProgressRow[]; now: number }>) {
+  const [page, setPage] = useState(0);
   if (!filtered.length) {
     return (
       <div className="dash-none">
@@ -247,44 +268,47 @@ function PeopleTable({ filtered, now }: Readonly<{ filtered: ProgressRow[]; now:
     );
   }
   return (
-    <div className="table-wrap">
-      <table className="dash-table">
-        <thead>
-          <tr>
-            <th>Pessoa</th>
-            <th>Trilha</th>
-            <th>Progresso</th>
-            <th>Última atividade</th>
-            <th>Situação</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filtered.map((row) => {
-            const rowStatus = statusOf(row);
-            const stalled = isStalled(row, now);
-            return (
-              <tr key={`${row.trailId}-${row.userId}`}>
-                <td>
-                  <strong>{row.name}</strong>
-                  <span className="dash-sub">{row.jobRoleName ?? row.email}</span>
-                </td>
-                <td>{row.trailTitle}</td>
-                <td className="dash-progress">
-                  <ProgressBar percent={row.percent} label={`Progresso de ${row.name} em ${row.trailTitle}`} />
-                  <span>
-                    {row.completedSteps}/{row.totalSteps} · {row.percent}%
-                  </span>
-                </td>
-                <td className={stalled ? 'dash-idle is-stalled' : 'dash-idle'}>{relativeDate(row.lastActivityAt)}</td>
-                <td>
-                  <span className={`badge progress-${rowStatus}`}>{progressStatusLabels[rowStatus]}</span>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <>
+      <div className="table-wrap">
+        <table className="dash-table">
+          <thead>
+            <tr>
+              <th>Pessoa</th>
+              <th>Trilha</th>
+              <th>Progresso</th>
+              <th>Última atividade</th>
+              <th>Situação</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map((row) => {
+              const rowStatus = statusOf(row);
+              const stalled = isStalled(row, now);
+              return (
+                <tr key={`${row.trailId}-${row.userId}`}>
+                  <td>
+                    <strong>{row.name}</strong>
+                    <span className="dash-sub">{row.jobRoleName ?? row.email}</span>
+                  </td>
+                  <td>{row.trailTitle}</td>
+                  <td className="dash-progress">
+                    <ProgressBar percent={row.percent} label={`Progresso de ${row.name} em ${row.trailTitle}`} />
+                    <span>
+                      {row.completedSteps}/{row.totalSteps} · {row.percent}%
+                    </span>
+                  </td>
+                  <td className={stalled ? 'dash-idle is-stalled' : 'dash-idle'}>{relativeDate(row.lastActivityAt)}</td>
+                  <td>
+                    <span className={`badge progress-${rowStatus}`}>{progressStatusLabels[rowStatus]}</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <Pager page={page} pages={Math.ceil(filtered.length / PAGE_SIZE)} total={filtered.length} setPage={setPage} />
+    </>
   );
 }
 
@@ -369,7 +393,7 @@ export function DashboardPage() {
 
           <section ref={tableRef} className="dash-card dash-people" aria-labelledby="por-pessoa">
             <header className="dash-card-head">
-              <h2 id="por-pessoa">Por pessoa</h2>
+              <h2 id="por-pessoa">Por pessoa e trilha</h2>
               <span>
                 {filtered.length} de {rows.length}
               </span>
@@ -393,11 +417,7 @@ export function DashboardPage() {
                   </option>
                 ))}
               </select>
-              <select
-                aria-label="Filtrar por situação"
-                value={status}
-                onChange={(event) => setStatus(event.target.value as StatusFilter)}
-              >
+              <select aria-label="Filtrar por situação" value={status} onChange={(event) => setStatus(event.target.value as StatusFilter)}>
                 <option value="all">Todas as situações</option>
                 {(Object.keys(progressStatusLabels) as ProgressStatus[]).map((key) => (
                   <option key={key} value={key}>
@@ -408,7 +428,7 @@ export function DashboardPage() {
               </select>
             </div>
 
-            <PeopleTable filtered={filtered} now={now} />
+            <PeopleTable key={`${trailId}|${status}|${search}`} filtered={filtered} now={now} />
           </section>
         </>
       ) : null}

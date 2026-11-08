@@ -1,6 +1,8 @@
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
+import { useAuth } from '../auth/AuthContext';
 import { ArrowRightIcon, UserIcon } from '../layout/icons';
+import { CompanySection } from './CompanySection';
 import {
   applyPreferences,
   readPreferences,
@@ -61,6 +63,8 @@ function ThemePreview({ theme }: Readonly<{ theme: ThemeChoice }>) {
 }
 
 export function SettingsPage() {
+  const { session } = useAuth();
+  const isMaster = session?.user.role === 'master';
   const [preferences, setPreferences] = useState<Preferences>(readPreferences);
 
   useEffect(() => {
@@ -74,7 +78,7 @@ export function SettingsPage() {
     <div className="settings">
       <header className="home-header">
         <h1>Configurações</h1>
-        <p>Preferências deste navegador. Valem só para você.</p>
+        <p>{isMaster ? 'Aparência deste navegador, dados da empresa e acesso ao seu perfil.' : 'Aparência deste navegador e acesso ao seu perfil.'}</p>
       </header>
 
       <div className="settings-panel">
@@ -99,6 +103,12 @@ export function SettingsPage() {
             ))}
           </div>
         </SettingsSection>
+
+        {isMaster ? (
+          <SettingsSection title="Empresa" description="O nome aparece no menu, nos convites e nos e-mails enviados para a equipe.">
+            <CompanySection />
+          </SettingsSection>
+        ) : null}
 
         <SettingsSection title="Conta" description="Nome, e-mail e senha ficam no seu perfil.">
           <Link to="/perfil" className="settings-link">

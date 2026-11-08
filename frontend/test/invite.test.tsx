@@ -1,5 +1,6 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { tokenStorage } from '../src/api/client';
 import { mockFetch, session } from './support/fetch';
 import { renderApp } from './support/render';
 
@@ -81,5 +82,34 @@ describe('aceitar convite', () => {
 
     expect(await screen.findByRole('heading', { name: 'Convite indisponível' })).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveTextContent('Este convite expirou.');
+  });
+
+  it('quem já está logado vê com qual conta está e pode sair para aceitar', async () => {
+    tokenStorage.set('tok');
+    mockFetch({
+      'GET /auth/me': { body: session },
+      'GET /invites/token/abc': {
+        body: { invite: { companyName: 'Outra Empresa', email: null, role: 'colaborador', jobRoleName: null, expiresAt: '2030-01-01T00:00:00.000Z' } },
+      },
+    });
+    renderApp('/convite/abc');
+
+    expect(await screen.findByRole('heading', { name: 'Você já está conectado' })).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(session.user.email))).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Voltar ao início' })).toHaveAttribute('href', '/');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sair e continuar' }));
+
+    expect(await screen.findByText('Outra Empresa convidou você como colaborador.')).toBeInTheDocument();
+    expect(tokenStorage.get()).toBeNull();
+  });
+
+  it('o link de nova senha também avisa quem está logado', async () => {
+    tokenStorage.set('tok');
+    mockFetch({ 'GET /auth/me': { body: session } });
+    renderApp('/redefinir-senha/xyz');
+
+    expect(await screen.findByRole('heading', { name: 'Você já está conectado' })).toBeInTheDocument();
+    expect(screen.getByText(/definir uma nova senha/)).toBeInTheDocument();
   });
 });

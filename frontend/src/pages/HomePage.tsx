@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { roleLabels } from '../api/auth';
-import { learningApi, type MyTrail } from '../api/learning';
+import { learningApi, myTrailStatus, sortMyTrails, type MyTrail } from '../api/learning';
 import { overview, reportsApi } from '../api/reports';
 import { useAuth } from '../auth/AuthContext';
 import { ProgressBar } from '../components/ProgressBar';
@@ -88,6 +88,38 @@ function NextTrail({ trails }: Readonly<{ trails: MyTrail[] }>) {
   );
 }
 
+const homeStatusLabels = { todo: 'Não iniciada', doing: 'Em andamento', done: 'Concluída' } as const;
+
+function HomeTrails({ trails }: Readonly<{ trails: MyTrail[] }>) {
+  return (
+    <Section title="Suas trilhas" className="home-trails">
+      <Link to="/minhas-trilhas" className="home-section-link">
+        Ver todas
+        <ArrowRightIcon />
+      </Link>
+      <ul>
+        {sortMyTrails(trails).map((trail) => {
+          const status = myTrailStatus(trail);
+          return (
+            <li key={trail.id}>
+              <Link to={`/minhas-trilhas/${trail.id}`} className="home-trail">
+                <span className="home-trail-head">
+                  <strong>{trail.title}</strong>
+                  <span className={`status-chip is-${status}`}>{homeStatusLabels[status]}</span>
+                </span>
+                <ProgressBar percent={trail.percent} label={`Progresso em ${trail.title}`} />
+                <span className="home-trail-meta">
+                  {trail.completedSteps} de {trail.totalSteps} passos · {trail.percent}%
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  );
+}
+
 function TeamSummary() {
   const report = useResource(loadReport);
   if (!report.data) {
@@ -110,7 +142,7 @@ function TeamSummary() {
   const stats = overview(report.data.trails, report.data.rows);
   const items = [
     { label: 'Pessoas em onboarding', value: String(stats.people), hint: `${stats.trails} trilhas publicadas` },
-    { label: 'Conclusão média', value: `${stats.averagePercent}%`, hint: `${stats.completedAssignments} de ${stats.assignments} trilhas concluídas` },
+    { label: 'Conclusão média', value: `${stats.averagePercent}%`, hint: `${stats.completedAssignments} de ${stats.assignments} atribuições concluídas` },
     { label: 'Paradas há mais de 7 dias', value: String(stats.stalled), hint: 'sem avançar nenhum passo', alert: stats.stalled > 0 },
   ];
 
@@ -145,13 +177,9 @@ export function HomePage() {
 
   const shortcuts = [
     { to: '/minhas-trilhas', title: 'Minhas trilhas', text: 'Seu onboarding, passo a passo.', icon: <RouteIcon /> },
-    ...(manages
-      ? [
-          { to: '/painel', title: 'Painel', text: 'Quem concluiu e quem está parado.', icon: <ChartIcon /> },
-          { to: '/trilhas', title: 'Trilhas', text: 'Monte e publique para os cargos.', icon: <LayersIcon /> },
-          { to: '/equipe', title: 'Equipe', text: 'Convide pessoas e organize cargos.', icon: <UsersIcon /> },
-        ]
-      : []),
+    { to: '/painel', title: 'Painel', text: 'Quem concluiu e quem está parado.', icon: <ChartIcon /> },
+    { to: '/trilhas', title: 'Trilhas', text: 'Monte e publique para os cargos.', icon: <LayersIcon /> },
+    { to: '/equipe', title: 'Equipe', text: 'Convide pessoas e organize cargos.', icon: <UsersIcon /> },
   ];
 
   let next: ReactNode = null;
@@ -184,22 +212,26 @@ export function HomePage() {
 
       {manages ? <TeamSummary /> : null}
 
-      <Section title="Atalhos" className="home-shortcuts">
-        <ul>
-          {shortcuts.map((shortcut) => (
-            <li key={shortcut.to}>
-              <Link to={shortcut.to} className="home-shortcut">
-                <span className="home-shortcut-icon">{shortcut.icon}</span>
-                <span className="home-shortcut-text">
-                  <strong>{shortcut.title}</strong>
-                  <span>{shortcut.text}</span>
-                </span>
-                <ArrowRightIcon />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </Section>
+      {!manages && list.length > 0 ? <HomeTrails trails={list} /> : null}
+
+      {manages ? (
+        <Section title="Atalhos" className="home-shortcuts">
+          <ul>
+            {shortcuts.map((shortcut) => (
+              <li key={shortcut.to}>
+                <Link to={shortcut.to} className="home-shortcut">
+                  <span className="home-shortcut-icon">{shortcut.icon}</span>
+                  <span className="home-shortcut-text">
+                    <strong>{shortcut.title}</strong>
+                    <span>{shortcut.text}</span>
+                  </span>
+                  <ArrowRightIcon />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      ) : null}
     </div>
   );
 }

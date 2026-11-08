@@ -48,6 +48,11 @@ export interface StepInput {
   mediaId?: string | null;
 }
 
+export interface TrailAudience {
+  people: number;
+  started: number;
+}
+
 export const trailsApi = {
   list: () => api.get<{ trails: TrailSummary[] }>('/trails').then((data) => data.trails),
   get: (id: string) => api.get<{ trail: TrailTree }>(`/trails/${id}`).then((data) => data.trail),
@@ -56,6 +61,7 @@ export const trailsApi = {
   update: (id: string, changes: { title?: string; description?: string }) =>
     api.patch<{ trail: TrailTree }>(`/trails/${id}`, changes).then((data) => data.trail),
   remove: (id: string) => api.delete(`/trails/${id}`),
+  audience: (id: string) => api.get<TrailAudience>(`/trails/${id}/audience`),
   duplicate: (id: string) => api.post<{ trail: TrailTree }>(`/trails/${id}/duplicate`).then((data) => data.trail),
   publish: (id: string) => api.post<{ trail: TrailSummary; warnings: string[] }>(`/trails/${id}/publish`),
   unpublish: (id: string) => api.post<{ trail: TrailSummary }>(`/trails/${id}/unpublish`).then((data) => data.trail),

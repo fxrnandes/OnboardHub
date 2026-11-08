@@ -6,6 +6,7 @@ import { moveItem } from '../src/api/trails';
 import { mockFetch, session, type Routes } from './support/fetch';
 import { confirmInDialog } from './support/dialog';
 import { renderApp } from './support/render';
+import { audienceMessage } from '../src/pages/trails/LiveTrailNotice';
 
 const suporte = { id: 'j1', name: 'Suporte', memberCount: 1, createdAt: '' };
 const vendas = { id: 'j2', name: 'Vendas', memberCount: 0, createdAt: '' };
@@ -114,6 +115,15 @@ describe('lista de trilhas', () => {
   });
 });
 
+describe('aviso de trilha publicada', () => {
+  it('descreve quem já recebe a trilha', () => {
+    expect(audienceMessage({ people: 1, started: 0 })).toBe('Publicada para 1 pessoa. As mudanças aparecem na hora para quem está fazendo.');
+    expect(audienceMessage({ people: 5, started: 2 })).toBe(
+      'Publicada para 5 pessoas (2 já começaram). As mudanças aparecem na hora para quem está fazendo.',
+    );
+  });
+});
+
 describe('editor de trilha', () => {
   function fakeBackend(initial: TrailTree) {
     let tree = structuredClone(initial);
@@ -140,6 +150,7 @@ describe('editor de trilha', () => {
           },
         };
       },
+      'GET /trails/t1/audience': () => ({ body: { people: tree.jobRoleIds.length * 3, started: tree.jobRoleIds.length } }),
       'POST /trails/t1/unpublish': () => {
         tree.status = 'draft';
         return { body: { trail: tree } };
@@ -194,13 +205,18 @@ describe('editor de trilha', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Publicar trilha' }));
     expect(await screen.findByText(/nenhum colaborador vai vê-la/)).toBeInTheDocument();
     expect(screen.getByText('Publicada')).toBeInTheDocument();
+    expect(await screen.findByText('Publicada, mas ninguém tem os cargos marcados ainda.')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('checkbox', { name: 'Suporte' }));
     expect(screen.queryByText(/nenhum colaborador vai vê-la/)).not.toBeInTheDocument();
     expect(screen.getByRole('checkbox', { name: 'Suporte' })).toBeChecked();
+    expect(
+      await screen.findByText('Publicada para 3 pessoas (1 já começou). As mudanças aparecem na hora para quem está fazendo.'),
+    ).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: 'Voltar para rascunho' }));
     expect(await screen.findByText('Rascunho')).toBeInTheDocument();
+    expect(screen.queryByText(/As mudanças aparecem na hora/)).not.toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('checkbox', { name: 'Suporte' }));
     expect(backend.get().jobRoleIds).toEqual([]);

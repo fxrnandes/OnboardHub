@@ -90,12 +90,36 @@ describe('painel do gestor', () => {
 
     expect(await screen.findByRole('heading', { name: 'Painel' })).toBeInTheDocument();
     expect(screen.getByText('Pessoas em onboarding').nextSibling).toHaveTextContent('3');
-    expect(screen.getByText('Trilhas concluídas').nextSibling).toHaveTextContent('1/4');
+    expect(screen.getByText('Atribuições concluídas').nextSibling).toHaveTextContent('1/4');
     expect(screen.getByText('1 de 3 pessoas concluíram')).toBeInTheDocument();
     expect(screen.getByText('0 de 1 pessoa concluiu')).toBeInTheDocument();
     expect(screen.getAllByRole('row')).toHaveLength(5);
     expect(screen.getByText('dani@empresa.com')).toBeInTheDocument();
     expect(screen.getByText('Há 10 dias')).toBeInTheDocument();
+  });
+
+  it('pagina a tabela por pessoa e trilha e volta à primeira página ao filtrar', async () => {
+    const many = Array.from({ length: 25 }, (_, index) =>
+      row({ userId: `p${index}`, name: `Pessoa ${String(index + 1).padStart(2, '0')}`, email: `p${index}@empresa.com` }),
+    );
+    asMaster({ 'GET /reports/progress': { body: { trails: trails.slice(0, 1), rows: many } } });
+    renderApp('/painel');
+
+    expect(await screen.findByRole('heading', { name: 'Por pessoa e trilha' })).toBeInTheDocument();
+    const pager = screen.getByRole('navigation', { name: 'Páginas da tabela' });
+    expect(within(pager).getByText('1–20 de 25')).toBeInTheDocument();
+    expect(screen.getByText('Pessoa 20')).toBeInTheDocument();
+    expect(screen.queryByText('Pessoa 21')).not.toBeInTheDocument();
+    expect(within(pager).getByRole('button', { name: 'Anterior' })).toBeDisabled();
+
+    await userEvent.click(within(pager).getByRole('button', { name: 'Próxima' }));
+    expect(within(pager).getByText('21–25 de 25')).toBeInTheDocument();
+    expect(screen.getByText('Pessoa 25')).toBeInTheDocument();
+    expect(within(pager).getByRole('button', { name: 'Próxima' })).toBeDisabled();
+
+    await userEvent.type(screen.getByLabelText('Buscar pessoa'), 'Pessoa 0');
+    expect(screen.queryByRole('navigation', { name: 'Páginas da tabela' })).not.toBeInTheDocument();
+    expect(screen.getByText('Pessoa 09')).toBeInTheDocument();
   });
 
   it('filtra por trilha, situação e busca', async () => {

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { roleLabels, type Role } from '../../api/auth';
 import { jobRolesApi, membersApi, type Member } from '../../api/team';
 import { useAuth } from '../../auth/AuthContext';
-import { ConfirmButton } from '../../components/ConfirmButton';
+import { ConfirmButton, ConfirmDialog } from '../../components/ConfirmButton';
 import { FormAlert } from '../../components/FormAlert';
 import { useAction } from '../../components/useAction';
 import { useResource } from '../../components/useResource';
@@ -13,6 +13,17 @@ const roles: Role[] = ['master', 'gestor', 'colaborador'];
 
 const dateFormat = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
 
+function roleChangeTitle(member: Member, role: Role) {
+  return role === 'master' ? `Tornar ${member.name} administrador?` : `Tirar ${member.name} da administração?`;
+}
+
+function roleChangeDescription(role: Role) {
+  if (role === 'master') {
+    return 'Administradores têm controle total da conta: pessoas, cargos, convites, trilhas e até a exclusão da empresa.';
+  }
+  return `A pessoa passa a ser ${roleLabels[role].toLowerCase()} e perde o acesso às configurações da conta.`;
+}
+
 export function MembersTab() {
   const { session } = useAuth();
   const isMaster = session?.user.role === 'master';
@@ -21,6 +32,7 @@ export function MembersTab() {
   const action = useAction();
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<Role | 'all'>('all');
+  const [roleChange, setRoleChange] = useState<{ member: Member; role: Role } | null>(null);
 
   if (members.loading && !members.data) {
     return (
@@ -50,6 +62,14 @@ export function MembersTab() {
       const updated = await membersApi.update(member.id, changes);
       members.setData((list) => list?.map((item) => (item.id === updated.id ? updated : item)) ?? null);
     });
+  }
+
+  function changeRole(member: Member, role: Role) {
+    if (role === 'master' || member.role === 'master') {
+      setRoleChange({ member, role });
+      return;
+    }
+    void update(member, { role });
   }
 
   async function remove(member: Member) {
@@ -86,7 +106,7 @@ export function MembersTab() {
       <section className="dash-card team-card">
         {visible.length ? (
           <div className="table-wrap">
-            <table className="dash-table team-table">
+            <table className="dash-table team-table stack-table">
               <thead>
                 <tr>
                   <th>Pessoa</th>
@@ -115,14 +135,14 @@ export function MembersTab() {
                           </span>
                         </div>
                       </td>
-                      <td>
+                      <td data-label="Papel">
                         {isMaster ? (
                           <select
                             className="pill-select"
                             aria-label={`Papel de ${member.name}`}
                             value={member.role}
                             disabled={action.pending}
-                            onChange={(event) => update(member, { role: event.target.value as Role })}
+                            onChange={(event) => changeRole(member, event.target.value as Role)}
                           >
                             {roles.map((role) => (
                               <option key={role} value={role}>
@@ -134,7 +154,7 @@ export function MembersTab() {
                           roleLabels[member.role]
                         )}
                       </td>
-                      <td>
+                      <td data-label="Cargo">
                         {isMaster ? (
                           <select
                             className="pill-select"
@@ -154,7 +174,7 @@ export function MembersTab() {
                           jobRoleName(member.jobRoleId)
                         )}
                       </td>
-                      <td className="team-date">{member.createdAt ? dateFormat.format(new Date(member.createdAt)) : '—'}</td>
+                      <td className="team-date" data-label="Entrou em">{member.createdAt ? dateFormat.format(new Date(member.createdAt)) : '—'}</td>
                       {isMaster ? (
                         <td className="team-actions">
                           {isSelf ? null : (
@@ -184,6 +204,19 @@ export function MembersTab() {
         )}
       </section>
       {isMaster ? <p className="team-note">Para adicionar pessoas, envie um convite na aba Convites.</p> : null}
+      {roleChange ? (
+        <ConfirmDialog
+          title={roleChangeTitle(roleChange.member, roleChange.role)}
+          description={roleChangeDescription(roleChange.role)}
+          confirmLabel={roleChange.role === 'master' ? 'Tornar administrador' : 'Mudar papel'}
+          onConfirm={async () => {
+            const { member, role } = roleChange;
+            setRoleChange(null);
+            await update(member, { role });
+          }}
+          onClose={() => setRoleChange(null)}
+        />
+      ) : null}
     </div>
   );
 }

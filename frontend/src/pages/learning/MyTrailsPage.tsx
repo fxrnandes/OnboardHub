@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
-import { learningApi, type MyTrail } from '../../api/learning';
+import { learningApi, myTrailStatus, sortMyTrails, type MyTrail, type MyTrailStatus } from '../../api/learning';
 import { relativeDate } from '../../api/reports';
 import { useAuth } from '../../auth/AuthContext';
 import { FormAlert } from '../../components/FormAlert';
@@ -9,13 +9,10 @@ import { useResource } from '../../components/useResource';
 import { ArrowRightIcon, CheckIcon, RouteIcon } from '../../layout/icons';
 import { Bone, Loading, RowBones } from '../../components/Skeleton';
 
-type Status = 'todo' | 'doing' | 'done';
+type Status = MyTrailStatus;
 type Filter = 'all' | Status;
 
-function statusOf(trail: MyTrail): Status {
-  if (trail.completed) return 'done';
-  return trail.completedSteps > 0 ? 'doing' : 'todo';
-}
+const statusOf = myTrailStatus;
 
 const statusLabels: Record<Status, string> = { todo: 'Não iniciada', doing: 'Em andamento', done: 'Concluída' };
 
@@ -120,7 +117,7 @@ export function MyTrailsPage() {
   const { session } = useAuth();
   const trails = useResource(learningApi.list);
   const hasJobRole = Boolean(session?.user.jobRoleId);
-  const all = trails.data ?? [];
+  const all = sortMyTrails(trails.data ?? []);
 
   let content: ReactNode = null;
   if (trails.loading && !trails.data) {

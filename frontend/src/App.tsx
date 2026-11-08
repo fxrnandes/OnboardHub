@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router';
 import { AppGate } from './auth/AppGate';
-import { GuestOnly, RequireAuth } from './auth/guards';
+import { GuestOnly, RequireAuth, SignedOutFor } from './auth/guards';
 import { AcceptInvitePage } from './pages/AcceptInvitePage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { DashboardPage } from './pages/dashboard/DashboardPage';
@@ -26,8 +26,8 @@ export function App() {
       <Route path="/entrar" element={<GuestOnly><LoginPage /></GuestOnly>} />
       <Route path="/cadastro" element={<GuestOnly><SignupPage /></GuestOnly>} />
       <Route path="/esqueci-senha" element={<GuestOnly><ForgotPasswordPage /></GuestOnly>} />
-      <Route path="/redefinir-senha/:token" element={<GuestOnly><ResetPasswordPage /></GuestOnly>} />
-      <Route path="/convite/:token" element={<GuestOnly><AcceptInvitePage /></GuestOnly>} />
+      <Route path="/redefinir-senha/:token" element={<SignedOutFor purpose="definir uma nova senha"><ResetPasswordPage /></SignedOutFor>} />
+      <Route path="/convite/:token" element={<SignedOutFor purpose="aceitar o convite"><AcceptInvitePage /></SignedOutFor>} />
       <Route element={<AppGate />}>
         <Route index element={<HomePage />} />
         <Route path="perfil" element={<ProfilePage />} />
@@ -41,7 +41,7 @@ export function App() {
           <Route index element={<Navigate to="membros" replace />} />
           <Route path="membros" element={<MembersTab />} />
           <Route path="cargos" element={<RequireAuth roles={['master']}><JobRolesTab /></RequireAuth>} />
-          <Route path="convites" element={<RequireAuth roles={['master']}><InvitesTab /></RequireAuth>} />
+          <Route path="convites" element={<InvitesTab />} />
         </Route>
       </Route>
       <Route path="*" element={<NotFoundPage />} />
