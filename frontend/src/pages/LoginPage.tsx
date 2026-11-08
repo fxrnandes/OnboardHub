@@ -5,7 +5,6 @@ import { useAuth } from '../auth/AuthContext';
 import { Field } from '../components/Field';
 import { FormAlert } from '../components/FormAlert';
 import { PasswordField } from '../components/PasswordField';
-import { SocialSignIn } from '../components/SocialSignIn';
 import { useSubmit } from '../components/useSubmit';
 import { CheckIcon, MailIcon } from '../layout/icons';
 import { AuthLayout } from '../layout/AuthLayout';
@@ -65,7 +64,6 @@ export function LoginPage() {
 
   return (
     <AuthLayout title="Entrar">
-      <SocialSignIn />
       <form ref={formRef} onSubmit={submit} noValidate>
         {notice ? (
           <output className="form-success">

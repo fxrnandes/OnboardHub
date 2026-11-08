@@ -4,6 +4,7 @@ import express, { type Express } from 'express';
 import type pg from 'pg';
 import { requireAuth } from './http/auth.middleware.js';
 import { errorHandler } from './http/errors.js';
+import { byIpAndEmail, rateLimit, type RateLimit } from './http/rate-limit.js';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { AuthService } from './modules/auth/auth.service.js';
 import { PasswordResetService } from './modules/auth/password-reset.service.js';
@@ -30,6 +31,33 @@ export interface AppDependencies {
   mailer?: Mailer;
   storage?: MediaStorage;
   mediaLimits?: MediaLimits;
+  rateLimits?: Partial<RateLimits> | false;
+}
+
+export interface RateLimits {
+  login: RateLimit;
+  signup: RateLimit;
+  passwordReset: RateLimit;
+  token: RateLimit;
+}
+
+const FIFTEEN_MINUTES = 15 * 60 * 1000;
+
+export const DEFAULT_RATE_LIMITS: RateLimits = {
+  login: { windowMs: FIFTEEN_MINUTES, max: 10 },
+  signup: { windowMs: 60 * 60 * 1000, max: 10 },
+  passwordReset: { windowMs: FIFTEEN_MINUTES, max: 5 },
+  token: { windowMs: FIFTEEN_MINUTES, max: 30 },
+};
+
+function applyRateLimits(app: Express, overrides: Partial<RateLimits>) {
+  const limits = { ...DEFAULT_RATE_LIMITS, ...overrides };
+  app.post('/auth/login', rateLimit(limits.login, byIpAndEmail));
+  app.post('/auth/signup', rateLimit(limits.signup));
+  app.post('/auth/password-resets', rateLimit(limits.passwordReset, byIpAndEmail));
+  const tokens = rateLimit(limits.token);
+  app.use('/auth/password-resets/:token', tokens);
+  app.use('/invites/token/:token', tokens);
 }
 
 export function createApp({
@@ -39,14 +67,18 @@ export function createApp({
   mailer = new LogMailer(),
   storage = new LocalDiskStorage(join(tmpdir(), 'onboardhub-media'), jwtSecret, '/api'),
   mediaLimits,
+  rateLimits = {},
 }: AppDependencies): Express {
   const app = express();
+  app.disable('x-powered-by');
+  app.set('trust proxy', 'loopback, uniquelocal');
   const tokens = new TokenService(jwtSecret);
   const authenticated = requireAuth(tokens, pool);
 
   const media = new MediaService(pool, storage, mediaLimits);
 
   app.use(express.json());
+  if (rateLimits) applyRateLimits(app, rateLimits);
 
   app.use('/health', healthRouter);
   const resets = new PasswordResetService(pool, tokens, mailer, appUrl);

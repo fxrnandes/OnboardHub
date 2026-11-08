@@ -26,7 +26,7 @@ export class MemoryMailer implements Mailer {
 export function createTestApp(options: Pick<AppDependencies, 'storage' | 'mediaLimits'> = {}) {
   const pool = createTestPool();
   const mailer = new MemoryMailer();
-  const app = createApp({ pool, jwtSecret: TEST_JWT_SECRET, appUrl: 'http://app.teste', mailer, ...options });
+  const app = createApp({ pool, jwtSecret: TEST_JWT_SECRET, appUrl: 'http://app.teste', mailer, rateLimits: false, ...options });
   return { app, pool, mailer };
 }
 

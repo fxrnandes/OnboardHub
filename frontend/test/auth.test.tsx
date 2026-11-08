@@ -68,6 +68,23 @@ describe('autenticação', () => {
     expect(tokenStorage.get()).toBeNull();
   });
 
+  it('avisa quando o servidor bloqueia por excesso de tentativas', async () => {
+    mockFetch({
+      'POST /auth/login': {
+        status: 429,
+        body: { error: { code: 'too_many_requests', message: 'Muitas tentativas. Aguarde alguns minutos e tente de novo.' } },
+      },
+    });
+    renderApp('/entrar');
+
+    await userEvent.type(screen.getByLabelText('E-mail'), 'ana@empresa.com');
+    await userEvent.type(screen.getByLabelText('Senha'), 'errada');
+    await userEvent.click(screen.getByRole('button', { name: 'Entrar' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Muitas tentativas. Aguarde alguns minutos e tente de novo.');
+    expect(tokenStorage.get()).toBeNull();
+  });
+
   it('confere e-mail e senha antes de tentar entrar', async () => {
     const { calls } = mockFetch({});
     renderApp('/entrar');
@@ -99,14 +116,12 @@ describe('autenticação', () => {
     expect(password).toHaveAttribute('type', 'password');
   });
 
-  it.each(['/entrar', '/cadastro'])('mostra o botão do Google em %s avisando que ainda não está disponível', async (path) => {
-    const { calls } = mockFetch({});
+  it.each(['/entrar', '/cadastro'])('não oferece login com Google em %s', async (path) => {
+    mockFetch({});
     renderApp(path);
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Continuar com Google' }));
-
-    expect(await screen.findByRole('status')).toHaveTextContent('O acesso com Google estará disponível em breve.');
-    expect(calls).toHaveLength(0);
+    expect(await screen.findByRole('button', { name: /Entrar|Continuar/ })).toBeInTheDocument();
+    expect(screen.queryByText(/Google/)).not.toBeInTheDocument();
   });
 
   async function fillSignupStepOne() {
@@ -128,7 +143,6 @@ describe('autenticação', () => {
     await fillSignupStepOne();
 
     expect(await screen.findByText('Etapa 2 de 2')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Continuar com Google' })).not.toBeInTheDocument();
     await userEvent.type(screen.getByLabelText('Nome da empresa'), 'Empresa Teste');
     await userEvent.type(screen.getByLabelText('CNPJ'), '11222333000181');
     expect(screen.getByLabelText('CNPJ')).toHaveValue('11.222.333/0001-81');

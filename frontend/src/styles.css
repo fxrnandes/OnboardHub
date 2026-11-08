@@ -1004,78 +1004,6 @@ a:hover {
   outline-offset: 2px;
 }
 
-.auth-social {
-  margin-bottom: 4px;
-}
-
-.auth-social-button {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 44px;
-  padding: 0 48px;
-  border: 1px solid var(--ob-neutral-500);
-  border-radius: var(--radius-full);
-  background: var(--ob-white);
-  color: var(--ob-ink);
-  font: inherit;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background var(--transition), border-color var(--transition);
-}
-
-.auth-social-button:hover {
-  border-color: var(--ob-neutral-600);
-  background: var(--ob-neutral-25);
-}
-
-.auth-social-button:focus-visible {
-  outline: 2px solid var(--ob-brand-600);
-  outline-offset: 2px;
-}
-
-.auth-social-button svg {
-  position: absolute;
-  left: 18px;
-  width: 18px;
-  height: 18px;
-}
-
-.auth-social-notice {
-  margin: 10px 0 0;
-  text-align: center;
-  color: var(--ob-neutral-600);
-  font-size: 13px;
-}
-
-.auth-divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 22px 16px 24px;
-  color: var(--ob-neutral-600);
-  font-size: 13px;
-  text-transform: uppercase;
-}
-
-.auth-divider::before,
-.auth-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-}
-
-.auth-divider::before {
-  background: linear-gradient(90deg, rgba(0, 0, 0, 0), var(--ob-neutral-300));
-}
-
-.auth-divider::after {
-  background: linear-gradient(90deg, var(--ob-neutral-300), rgba(0, 0, 0, 0));
-}
-
 .auth-text {
   margin: 0 0 12px;
   color: var(--ob-ink);
@@ -1528,10 +1456,6 @@ a:hover {
 
   .auth-steps {
     margin-bottom: 18px;
-  }
-
-  .auth-divider {
-    margin: 16px 16px 16px;
   }
 
   .auth-card .field {

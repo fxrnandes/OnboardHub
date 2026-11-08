@@ -6,7 +6,6 @@ import { isValidCnpj, maskCnpj } from '../components/cnpj';
 import { Field } from '../components/Field';
 import { FormAlert } from '../components/FormAlert';
 import { PasswordField } from '../components/PasswordField';
-import { SocialSignIn } from '../components/SocialSignIn';
 import { useSubmit } from '../components/useSubmit';
 import { AuthLayout } from '../layout/AuthLayout';
 import { MailIcon } from '../layout/icons';
@@ -110,7 +109,6 @@ export function SignupPage() {
     return (
       <AuthLayout title="Cadastre sua empresa" subtitle="Você cria o acesso de administrador e, depois, convida a equipe.">
         <StepIndicator step={1} />
-        <SocialSignIn />
         <form ref={formRef} onSubmit={continueToCompany} noValidate>
           <Field
             label="Nome completo"
