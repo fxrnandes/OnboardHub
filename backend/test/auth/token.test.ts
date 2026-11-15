@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import { describe, expect, it } from 'vitest';
 import { TokenService } from '../../src/modules/auth/token.js';
 
@@ -19,6 +20,12 @@ describe('TokenService', () => {
 
   it('recusa token expirado', () => {
     const token = new TokenService('segredo', -1).sign(payload);
+
+    expect(() => new TokenService('segredo').verify(token)).toThrow();
+  });
+
+  it('recusa token assinado com outro algoritmo', () => {
+    const token = jwt.sign({ companyId: 'empresa-1', role: 'master' }, 'segredo', { algorithm: 'HS512', subject: 'usuario-1' });
 
     expect(() => new TokenService('segredo').verify(token)).toThrow();
   });

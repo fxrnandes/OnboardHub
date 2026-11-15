@@ -163,7 +163,13 @@ export function MembersTab() {
                             disabled={action.pending}
                             onChange={(event) => update(member, { jobRoleId: event.target.value || null })}
                           >
-                            <option value="">Sem cargo</option>
+                            {member.role === 'colaborador' ? (
+                              <option value="" disabled>
+                                Sem cargo (não vê trilhas)
+                              </option>
+                            ) : (
+                              <option value="">Sem cargo</option>
+                            )}
                             {jobRoles.data?.map((jobRole) => (
                               <option key={jobRole.id} value={jobRole.id}>
                                 {jobRole.name}

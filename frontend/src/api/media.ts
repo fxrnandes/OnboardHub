@@ -1,4 +1,4 @@
-import { ApiError, tokenStorage } from './client';
+import { ApiError, reportStatus, tokenStorage } from './client';
 
 export type MediaKind = 'image' | 'video';
 
@@ -57,15 +57,18 @@ export function uploadMedia(file: File, onProgress?: (percent: number) => void):
     };
     xhr.onload = () => {
       const data = xhr.response as { media?: StepMedia; error?: { code?: string; message?: string } } | null;
-      if (xhr.status >= 200 && xhr.status < 300 && data?.media) resolve(data.media);
-      else
-        reject(
-          new ApiError(
-            xhr.status,
-            data?.error?.code ?? 'upload_failed',
-            data?.error?.message ?? 'Não foi possível enviar o arquivo. Tente novamente.',
-          ),
-        );
+      if (xhr.status >= 200 && xhr.status < 300 && data?.media) {
+        resolve(data.media);
+        return;
+      }
+      reportStatus(xhr.status, data?.error?.code, Boolean(token));
+      reject(
+        new ApiError(
+          xhr.status,
+          data?.error?.code ?? 'upload_failed',
+          data?.error?.message ?? 'Não foi possível enviar o arquivo. Tente novamente.',
+        ),
+      );
     };
     xhr.onerror = () => reject(new ApiError(0, 'network_error', 'Não foi possível conectar ao servidor.'));
     xhr.onabort = () => reject(new ApiError(0, 'upload_canceled', 'Envio cancelado.'));

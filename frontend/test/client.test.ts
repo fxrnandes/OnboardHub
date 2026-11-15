@@ -1,4 +1,4 @@
-import { api, ApiError, tokenStorage } from '../src/api/client';
+import { api, ApiError, download, onSessionExpired, tokenStorage } from '../src/api/client';
 import { mockFetch } from './support/fetch';
 
 describe('api client', () => {
@@ -58,5 +58,27 @@ describe('api client', () => {
   it('informa falha de rede', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => Promise.reject(new TypeError('Failed to fetch'))));
     await expect(api.get('/x')).rejects.toMatchObject({ status: 0, code: 'network_error' });
+  });
+
+  it('avisa que a sessão expirou só em 401 de chamada autenticada', async () => {
+    const expired = vi.fn();
+    onSessionExpired(expired);
+    mockFetch({
+      'GET /a': { status: 401, body: { error: { code: 'unauthorized', message: 'x' } } },
+      'GET /b': { status: 401, body: { error: { code: 'invalid_credentials', message: 'x' } } },
+    });
+
+    await expect(api.get('/a')).rejects.toBeInstanceOf(ApiError);
+    expect(expired).not.toHaveBeenCalled();
+
+    tokenStorage.set('abc');
+    await expect(api.get('/b')).rejects.toBeInstanceOf(ApiError);
+    expect(expired).not.toHaveBeenCalled();
+    await expect(api.get('/a')).rejects.toBeInstanceOf(ApiError);
+    expect(expired).toHaveBeenCalledOnce();
+    await expect(download('/a', 'x.csv')).rejects.toBeInstanceOf(ApiError);
+    expect(expired).toHaveBeenCalledTimes(2);
+
+    onSessionExpired(null);
   });
 });

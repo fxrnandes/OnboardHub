@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { authApi, type Session } from '../api/auth';
-import { tokenStorage } from '../api/client';
+import { onSessionExpired, tokenStorage } from '../api/client';
 
 type Status = 'loading' | 'authenticated' | 'anonymous';
 
@@ -53,6 +53,13 @@ export function AuthProvider({ children }: Readonly<{ children: ReactNode }>) {
     setSession(null);
     setStatus('anonymous');
   }, []);
+
+  const authenticated = status === 'authenticated';
+  useEffect(() => {
+    if (!authenticated) return;
+    onSessionExpired(() => logout('Sua sessão expirou. Entre de novo para continuar.'));
+    return () => onSessionExpired(null);
+  }, [authenticated, logout]);
 
   const consumeEntrance = useCallback(() => {
     const pending = entrance.current;

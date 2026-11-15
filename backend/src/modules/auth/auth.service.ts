@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type pg from 'pg';
 import { withTransaction } from '../../db/transaction.js';
 import { AppError } from '../../http/errors.js';
@@ -26,6 +27,8 @@ export interface LoginInput {
 }
 
 const UNIQUE_VIOLATION = '23505';
+
+const placeholderHash = hashPassword(randomUUID());
 
 export class AuthService {
   constructor(
@@ -64,7 +67,8 @@ export class AuthService {
 
   async login(input: LoginInput): Promise<{ token: string; user: User }> {
     const found = await new UserRepository(this.pool).findByEmail(input.email);
-    if (!found || !(await verifyPassword(input.password, found.passwordHash))) {
+    const matches = await verifyPassword(input.password, found?.passwordHash ?? (await placeholderHash));
+    if (!found || !matches) {
       throw new AppError(401, 'invalid_credentials', 'E-mail ou senha incorretos.');
     }
     const user = withoutPassword(found);

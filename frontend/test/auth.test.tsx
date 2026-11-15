@@ -324,6 +324,35 @@ describe('autenticação', () => {
     expect(await screen.findByRole('heading', { name: 'Olá, Ana' })).toBeInTheDocument();
   });
 
+  it('leva para o login com aviso quando a sessão expira no meio do uso', async () => {
+    tokenStorage.set('tok');
+    const expired = { status: 401, body: { error: { code: 'unauthorized', message: 'Sessão inválida ou expirada.' } } };
+    mockFetch({
+      'GET /auth/me': { body: session },
+      'GET /my/trails': expired,
+      'POST /auth/login': { body: { token: 'novo', user: session.user } },
+    });
+    renderApp('/minhas-trilhas');
+
+    expect(await screen.findByRole('heading', { name: 'Entrar' })).toBeInTheDocument();
+    expect(screen.getByText('Sua sessão expirou. Entre de novo para continuar.')).toBeInTheDocument();
+    expect(tokenStorage.get()).toBeNull();
+  });
+
+  it('senha errada no login não é tratada como sessão expirada', async () => {
+    mockFetch({
+      'POST /auth/login': { status: 401, body: { error: { code: 'invalid_credentials', message: 'E-mail ou senha incorretos.' } } },
+    });
+    renderApp('/entrar');
+
+    await userEvent.type(await screen.findByLabelText('E-mail'), 'ana@empresa.com');
+    await userEvent.type(screen.getByLabelText('Senha'), 'errada-123');
+    await userEvent.click(screen.getByRole('button', { name: 'Entrar' }));
+
+    expect(await screen.findByText('E-mail ou senha incorretos.')).toBeInTheDocument();
+    expect(screen.queryByText(/Sua sessão expirou/)).not.toBeInTheDocument();
+  });
+
   it('mostra página não encontrada', async () => {
     mockFetch({});
     renderApp('/nao-existe');

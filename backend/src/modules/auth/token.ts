@@ -8,6 +8,8 @@ export interface TokenPayload {
   ver?: number;
 }
 
+const ALGORITHM = 'HS256';
+
 export class TokenService {
   constructor(
     private readonly secret: string,
@@ -16,13 +18,14 @@ export class TokenService {
 
   sign(payload: TokenPayload): string {
     return jwt.sign({ companyId: payload.companyId, role: payload.role, ver: payload.ver ?? 0 }, this.secret, {
+      algorithm: ALGORITHM,
       subject: payload.sub,
       expiresIn: this.expiresIn,
     });
   }
 
   verify(token: string): TokenPayload {
-    const decoded = jwt.verify(token, this.secret) as jwt.JwtPayload;
+    const decoded = jwt.verify(token, this.secret, { algorithms: [ALGORITHM] }) as jwt.JwtPayload;
     return { sub: decoded.sub!, companyId: decoded.companyId, role: decoded.role, ver: decoded.ver ?? 0 };
   }
 }

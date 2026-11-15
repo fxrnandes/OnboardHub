@@ -51,7 +51,13 @@ export function jobRoleRoutes(db: Queryable, requireAuth: RequestHandler): Route
 
   router.delete('/:id', requireRole('master'), async (req, res) => {
     const id = idParam(req.params.id, 'Cargo');
-    if (!(await jobRoles.delete(req.auth!.companyId, id))) throw notFound();
+    const jobRole = await jobRoles.find(req.auth!.companyId, id);
+    if (!jobRole) throw notFound();
+    if (jobRole.memberCount > 0) {
+      const people = jobRole.memberCount === 1 ? '1 pessoa' : `${jobRole.memberCount} pessoas`;
+      throw new AppError(409, 'job_role_in_use', `Este cargo tem ${people}. Mova para outro cargo antes de excluir.`);
+    }
+    await jobRoles.delete(req.auth!.companyId, id);
     res.status(204).end();
   });
 

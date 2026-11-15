@@ -26,6 +26,18 @@ export const tokenStorage = {
   clear: () => localStorage.removeItem(TOKEN_KEY),
 };
 
+type SessionExpiredListener = () => void;
+
+let sessionExpiredListener: SessionExpiredListener | null = null;
+
+export function onSessionExpired(listener: SessionExpiredListener | null): void {
+  sessionExpiredListener = listener;
+}
+
+export function reportStatus(status: number, code: string | undefined, authenticated: boolean): void {
+  if (authenticated && status === 401 && code === 'unauthorized') sessionExpiredListener?.();
+}
+
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
@@ -51,6 +63,7 @@ export async function request<T>(method: Method, path: string, body?: unknown): 
 
   if (!response.ok) {
     const error = data?.error;
+    reportStatus(response.status, error?.code, Boolean(token));
     throw new ApiError(
       response.status,
       error?.code ?? 'unknown_error',
@@ -72,6 +85,7 @@ export async function download(path: string, filename: string): Promise<void> {
   }
   if (!response.ok) {
     const data = await response.json().catch(() => null);
+    reportStatus(response.status, data?.error?.code, Boolean(token));
     throw new ApiError(response.status, data?.error?.code ?? 'unknown_error', data?.error?.message ?? 'Não foi possível baixar o arquivo.');
   }
   const url = URL.createObjectURL(await response.blob());

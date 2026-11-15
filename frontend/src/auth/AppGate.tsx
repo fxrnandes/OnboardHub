@@ -5,10 +5,10 @@ import { useAuth } from './AuthContext';
 import { RequireAuth } from './guards';
 
 export function AppGate() {
-  const { status } = useAuth();
+  const { status, notice } = useAuth();
   const { pathname } = useLocation();
 
-  if (status === 'anonymous' && pathname === '/') return <LandingPage />;
+  if (status === 'anonymous' && pathname === '/' && !notice) return <LandingPage />;
 
   return (
     <RequireAuth>

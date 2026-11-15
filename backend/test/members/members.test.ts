@@ -39,14 +39,35 @@ describe('pessoas da empresa (RF03)', () => {
     expect((await member.get('/members')).status).toBe(200);
   });
 
-  it('master tira o cargo de uma pessoa', async () => {
+  it('master tira o cargo de um gestor', async () => {
     const { master } = await newCompany(app);
     const jobRole = (await master.post('/job-roles', { name: 'Vendas' })).body.jobRole;
-    const { memberId } = await addMember(app, master, 'colaborador', jobRole.id);
+    const { memberId } = await addMember(app, master, 'gestor', jobRole.id);
 
     const res = await master.patch(`/members/${memberId}`, { jobRoleId: null });
 
     expect(res.body.member.jobRoleId).toBeNull();
+  });
+
+  it('colaborador não fica sem cargo', async () => {
+    const { master } = await newCompany(app);
+    const jobRole = (await master.post('/job-roles', { name: 'Vendas' })).body.jobRole;
+    const { memberId } = await addMember(app, master, 'colaborador', jobRole.id);
+    const { memberId: gestorId } = await addMember(app, master, 'gestor');
+
+    const semCargo = await master.patch(`/members/${memberId}`, { jobRoleId: null });
+    expect(semCargo.status).toBe(400);
+    expect(semCargo.body.error.code).toBe('job_role_required');
+
+    const rebaixado = await master.patch(`/members/${gestorId}`, { role: 'colaborador' });
+    expect(rebaixado.status).toBe(400);
+
+    const comCargo = await master.patch(`/members/${gestorId}`, { role: 'colaborador', jobRoleId: jobRole.id });
+    expect(comCargo.status).toBe(200);
+    expect(comCargo.body.member).toMatchObject({ role: 'colaborador', jobRoleId: jobRole.id });
+
+    const promovido = await master.patch(`/members/${memberId}`, { role: 'gestor', jobRoleId: null });
+    expect(promovido.status).toBe(200);
   });
 
   it('não deixa a empresa sem nenhum master', async () => {

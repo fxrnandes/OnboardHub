@@ -1,5 +1,7 @@
+import express from 'express';
 import request from 'supertest';
 import { afterAll, describe, expect, it } from 'vitest';
+import { healthRoutes } from '../src/routes/health.routes.js';
 import { createTestApp } from './support/app.js';
 
 const { app, pool } = createTestApp();
@@ -11,6 +13,15 @@ describe('GET /health', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('ok');
+    expect(res.body.database).toBe('ok');
+  });
+
+  it('responde 503 quando o banco não responde', async () => {
+    const broken = { query: () => Promise.reject(new Error('sem banco')) };
+    const res = await request(express().use('/health', healthRoutes(broken))).get('/health');
+
+    expect(res.status).toBe(503);
+    expect(res.body).toMatchObject({ status: 'degraded', database: 'unavailable' });
   });
 
   it('informa o horário da resposta em formato ISO', async () => {

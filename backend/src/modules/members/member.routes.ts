@@ -49,6 +49,12 @@ export function memberRoutes(db: Queryable, requireAuth: RequestHandler): Router
       throw new AppError(400, 'job_role_not_found', 'Cargo não encontrado.');
     }
 
+    const role = changes.role ?? member.role;
+    const jobRoleId = changes.jobRoleId === undefined ? member.jobRoleId : changes.jobRoleId;
+    if (role === 'colaborador' && !jobRoleId) {
+      throw new AppError(400, 'job_role_required', 'Colaboradores precisam de um cargo: é por ele que a pessoa vê as trilhas.');
+    }
+
     const losingMaster = member.role === 'master' && changes.role !== undefined && changes.role !== 'master';
     if (losingMaster && (await users.countMasters(companyId)) <= 1) {
       throw new AppError(409, 'last_master', 'A empresa precisa ter pelo menos um master.');

@@ -23,7 +23,7 @@ import { memberRoutes } from './modules/members/member.routes.js';
 import { reportRoutes } from './modules/reports/report.routes.js';
 import { trailRoutes } from './modules/trails/trail.routes.js';
 import { TrailService } from './modules/trails/trail.service.js';
-import { healthRouter } from './routes/health.routes.js';
+import { healthRoutes } from './routes/health.routes.js';
 
 export interface AppDependencies {
   pool: pg.Pool;
@@ -81,7 +81,7 @@ export function createApp({
   app.use(express.json());
   if (rateLimits) applyRateLimits(app, rateLimits);
 
-  app.use('/health', healthRouter);
+  app.use('/health', healthRoutes(pool));
   const resets = new PasswordResetService(pool, tokens, mailer, appUrl);
   app.use('/auth', authRoutes(new AuthService(pool, tokens, media), resets, authenticated));
   app.use('/company', companyRoutes(pool, authenticated));

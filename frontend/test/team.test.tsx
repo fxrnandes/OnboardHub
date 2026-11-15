@@ -34,6 +34,18 @@ describe('equipe: pessoas', () => {
     expect(calls.at(-1)).toMatchObject({ body: { jobRoleId: null } });
   });
 
+  it('não oferece deixar um colaborador sem cargo', async () => {
+    asMaster({
+      'GET /members': { body: { members: [ana, bruno] } },
+      'GET /job-roles': { body: { jobRoles: [suporte] } },
+    });
+    renderApp('/equipe');
+
+    const cargo = await screen.findByLabelText('Cargo de Bruno Lima');
+    expect(within(cargo).getByRole('option', { name: 'Sem cargo (não vê trilhas)' })).toBeDisabled();
+    expect(within(screen.getByLabelText('Cargo de Ana Souza')).getByRole('option', { name: 'Sem cargo' })).toBeEnabled();
+  });
+
   it('pede confirmação antes de tornar alguém administrador', async () => {
     const { calls } = asMaster({
       'GET /members': { body: { members: [ana, bruno] } },

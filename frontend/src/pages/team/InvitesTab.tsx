@@ -160,11 +160,11 @@ function InviteList({ invites, manageable, busy, onResend, onRevoke }: Readonly<
         <h2 id="convites-title">Convites enviados</h2>
         <fieldset className="segmented segmented-sm" aria-label="Filtrar convites">
           <button type="button" aria-pressed={filter === 'pending'} onClick={() => setFilter('pending')}>
-            Pendentes
+            <span>Pendentes</span>
             <span className="segmented-count">{pendingCount}</span>
           </button>
           <button type="button" aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>
-            Todos
+            <span>Todos</span>
             <span className="segmented-count">{invites.length}</span>
           </button>
         </fieldset>

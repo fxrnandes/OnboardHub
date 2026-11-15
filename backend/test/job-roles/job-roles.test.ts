@@ -61,14 +61,20 @@ describe('cargos (H03)', () => {
     expect(list.body.jobRoles[0].memberCount).toBe(2);
   });
 
-  it('excluir um cargo deixa as pessoas dele sem cargo', async () => {
+  it('não exclui um cargo que ainda tem pessoas', async () => {
     const { master } = await newCompany(app);
     const jobRole = (await master.post('/job-roles', { name: 'Cozinha' })).body.jobRole;
-    const { member } = await addMember(app, master, 'colaborador', jobRole.id);
+    const outro = (await master.post('/job-roles', { name: 'Salão' })).body.jobRole;
+    const { member, memberId } = await addMember(app, master, 'colaborador', jobRole.id);
 
-    await master.delete(`/job-roles/${jobRole.id}`);
+    const blocked = await master.delete(`/job-roles/${jobRole.id}`);
+    expect(blocked.status).toBe(409);
+    expect(blocked.body.error.code).toBe('job_role_in_use');
+    expect(blocked.body.error.message).toBe('Este cargo tem 1 pessoa. Mova para outro cargo antes de excluir.');
+    expect((await member.get('/auth/me')).body.user.jobRoleId).toBe(jobRole.id);
 
-    expect((await member.get('/auth/me')).body.user.jobRoleId).toBeNull();
+    await master.patch(`/members/${memberId}`, { jobRoleId: outro.id });
+    expect((await master.delete(`/job-roles/${jobRole.id}`)).status).toBe(204);
   });
 
   it('gestor e colaborador podem ver os cargos, mas não alterar', async () => {
